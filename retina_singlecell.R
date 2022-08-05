@@ -40,9 +40,9 @@ return (Seurat)
 
 D59fetalS[["percent.rb"]] <- PercentageFeatureSet(D59fetalS, pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
 D59fetalS[["percent.mt"]] <- PercentageFeatureSet(D59fetalS, pattern = "^MT-")
-D59fetalS <- CellCycleScoring(D59fetalS, s.features = m.s.genes, g2m.features = m.g2m.genes, set.ident = FALSE)
+D59fetalS <- CellCycleScoring(D59fetalS, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE)
 D59fetalS <- subset(D59fetalS, subset = nCount_RNA > 1000 & nCount_RNA < 20000 & nFeature_RNA > 600 & nFeature_RNA < 6000 & percent.mt < 15 & percent.rb < 30)
-D59fetalS <- D59fetalS(poc, verbose = T, vars.to.regress = c('nCount_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+D59fetalS <- ScaleData(D59fetalS, verbose = T, vars.to.regress = c('nCount_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
 D59fetalS <- ProcessSeu(D59fetalS)
 
 FeaturePlot(D59fetalS, features = c('RBPMS'))
@@ -66,3 +66,31 @@ D59fetalS.markers %>%
      group_by(cluster) %>%
      top_n(n = 10, wt = avg_log2FC) -> top10
  DoHeatmap(D59fetalS, features = top10$gene) + NoLegend()
+
+#For merging P and C datasets
+D82PCfetalS <- merge(D82cfetalS , y = D82pfetalS)
+
+#FD59 clusters annotation
+#D59fetalS1 <- RenameIdents(object = D59fetalS1, '0' = 'RGC', '1' = 'T1A', '2' = 'RGC','3' = 'Progenitors', '4' = 'T1B', '5' = 'AC/HC', '6' = 'RGC', '7' = 'Progenitors', '8' = 'Progenitors')
+
+ProcessInt(my_data_frame) #This line is to choose the dataset for Integrated Processing in Seurat
+
+ProcessInt <- function(data.integrated){
+data.integrated <- ScaleData(data.integrated, verbose = FALSE)
+data.integrated <- RunPCA(data.integrated, npcs = 30, verbose = FALSE)
+data.integrated <- FindNeighbors(data.integrated, dims = 1:20)
+data.integrated <- FindClusters(data.integrated, resolution = 0.5)
+data.integrated <- RunUMAP(data.integrated, reduction = "pca", dims = 1:20)
+data.integrated <- RunTSNE(data.integrated,  dims.use = 1:10 )
+}
+
+#Choose the objects for integration
+
+integration_list <- list(poc, pocGH, soc, socGH, pocV, socV)
+
+features <- SelectIntegrationFeatures(object.list = integration_list)
+data.anchors <- FindIntegrationAnchors(object.list = integration_list, anchor.features = features)
+
+data.combined <- IntegrateData(anchorset = data.anchors)
+
+pocpocGHsocsocGHpocVsocV <- ProcessInt(data.combined)
