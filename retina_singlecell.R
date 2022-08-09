@@ -94,3 +94,7 @@ data.anchors <- FindIntegrationAnchors(object.list = integration_list, anchor.fe
 data.combined <- IntegrateData(anchorset = data.anchors)
 
 pocpocGHsocsocGHpocVsocV <- ProcessInt(data.combined)
+
+#For saving the Seurat objects
+SaveH5Seurat(D125PCfetalS1, 'C://Users/Emil/10X/scretina/FD125.h5Seurat', overwrite = TRUE)
+seuratobject <- LoadH5Seurat('C://Users/Emil/10X/scretina/FD125.h5Seurat')
