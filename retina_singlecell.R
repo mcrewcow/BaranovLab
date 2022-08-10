@@ -15,6 +15,8 @@ library(SeuratDisk)
 library(SeuratWrappers)
 library(Matrix)
 
+library(dittoSeq)
+
 data_dir <- 'C:/Users/Emil/BaranovLab/Retina/D59_fetal_filtered_gene_bc_matrices/GRCh38'
 list.files(data_dir)
 D59fetal <- Read10X(data.dir = data_dir)
@@ -113,19 +115,28 @@ poscells <- subset(adultretinaSsub, cells = poshla)
 negcells <- subset(adultretinaSsub, cells = neghla)
 adultretinaS1 <- SetIdent(adultretinaS1, cells = poshla, value = 'Microglia')
 
+library(htmlwidgets)
+library(plotly)
+library(ggplotly)
 
 #For Violin Plots
 #Subset RGCs and merge the data adding the $stage metadata
+RGCCXCR <- merge(D45orgSrgc, y = c(D60orgSrgc, D59fetalSRGC, D82PCfetalSRGC, D125PCfetalSRGC, adultretinaSRGC))
 RGCCXCR$stage <- factor(RGCCXCR$stage, levels = c('FD59','FD82','FD125','Adult','OD45','OD60'))
 library(ggplot2)
 vln_df = data.frame(CXCR4 = RGCCXCR[["RNA"]]@data["CXCR4",], cluster = RGCCXCR$stage)
-ggplot(vln_df, aes(x = cluster, y = CXCR4)) + geom_violin(aes(fill = cluster), trim=TRUE, scale = "width") + geom_jitter() + theme_minimal()
+ggplot(vln_df, aes(x = cluster, y = CXCR4)) + geom_violin(aes(fill = cluster), trim=TRUE, scale = "width") + geom_jitter(width = 0.2) + theme_minimal()
 
+#For bars
 ggplot(bars, aes(x = Stage, y = CXCR4, fill = Stage)) + geom_bar(stat = 'identity') + theme_minimal()
 ggplot(bars, aes(x = Stage, y = CXCR4, color = Stage)) + geom_bar(stat = 'identity', fill = 'white', size = 1.2) +
  geom_text(aes(label = round(CXCR4, digits = 1)), vjust = -1, color = 'black', size = 3.5) + theme_minimal() 
+ggplot(bars, aes(x = Stage, y = CXCR4, color = Stage)) + geom_bar(stat = 'identity', fill = 'white', size = 1.2) +
+ geom_text(aes(label = Amount), vjust = -1, color = 'black', size = 3.5) + theme_minimal()
 
 #For the dotplots merge the data with the $analysis metadata
+#The genes include: CXCR4, 
+analysis <- RenameIdents(analysis, 'Rod' = 'PR','Cone' = 'PR', 'ON-bipolar' = 'Bipolar', 'OFF-cone bipolar' = 'Bipolar', 'GABA-Amacrine' = 'Amacrine')
 CXCR.FD59 <- analysis[['RNA']]@data["CXCR4",] * (analysis$an == "FD59")
 CXCR.FD82 <- analysis[['RNA']]@data["CXCR4",] * (analysis$an == "FD82")
 CXCR.FD125 <- analysis[['RNA']]@data["CXCR4",] * (analysis$an == "FD125")
