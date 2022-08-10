@@ -135,7 +135,7 @@ ggplot(bars, aes(x = Stage, y = CXCR4, color = Stage)) + geom_bar(stat = 'identi
  geom_text(aes(label = Amount), vjust = -1, color = 'black', size = 3.5) + theme_minimal()
 
 #For the dotplots merge the data with the $analysis metadata
-#The genes include: CXCR4, 
+#The genes include: CXCR4, DCC, PTCH1, ROBO1
 analysis <- RenameIdents(analysis, 'Rod' = 'PR','Cone' = 'PR', 'ON-bipolar' = 'Bipolar', 'OFF-cone bipolar' = 'Bipolar', 'GABA-Amacrine' = 'Amacrine')
 CXCR.FD59 <- analysis[['RNA']]@data["CXCR4",] * (analysis$an == "FD59")
 CXCR.FD82 <- analysis[['RNA']]@data["CXCR4",] * (analysis$an == "FD82")
@@ -143,4 +143,9 @@ CXCR.FD125 <- analysis[['RNA']]@data["CXCR4",] * (analysis$an == "FD125")
 CXCR.Adult <- analysis[['RNA']]@data["CXCR4",] * (analysis$an == "Adult")
 analysis[['NEW']] <- CreateAssayObject(data = rbind(CXCR.FD59, CXCR.FD82, CXCR.FD125, CXCR.Adult))
 DefaultAssay(analysis) <- "NEW"
-DotPlot(analysis, features = c("CXCR.FD59", "CXCR.FD82",'CXCR.FD125','CXCR.Adult')) 
+DotPlot(analysis, features = c("CXCR.FD59", "CXCR.FD82",'CXCR.FD125','CXCR.Adult'), dot.scale = 10) 
+
+#For FeatureScatter
+RGCCXCR <- merge(D59fetalSRGC, y = c(D82PCfetalSRGC, D125PCfetalSRGC, adultretinaSRGC))
+RGCCXCR$stage <- factor(RGCCXCR$stage, levels = c('FD59','FD82','FD125','Adult'))
+FeatureScatter(RGCCXCR, feature1 = 'CXCR4', feature2 = 'RBPMS', group.by = 'stage', pt.size = 5)
