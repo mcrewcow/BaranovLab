@@ -22,6 +22,8 @@ list.files(data_dir)
 D59fetal <- Read10X(data.dir = data_dir)
 D59fetalS = CreateSeuratObject(counts = D59fetal)
 
+memory.limit(size=56000)
+
 s.genes <- cc.genes.updated.2019$s.genes
 g2m.genes <- cc.genes.updated.2019$g2m.genes
 
@@ -135,7 +137,7 @@ ggplot(bars, aes(x = Stage, y = CXCR4, color = Stage)) + geom_bar(stat = 'identi
  geom_text(aes(label = Amount), vjust = -1, color = 'black', size = 3.5) + theme_minimal()
 
 #For the dotplots merge the data with the $analysis metadata
-#The genes include: CXCR4, DCC, PTCH1, ROBO1
+#The genes include: CXCR4, DCC, PTCH1, ROBO1 etc
 analysis <- RenameIdents(analysis, 'Rod' = 'PR','Cone' = 'PR', 'ON-bipolar' = 'Bipolar', 'OFF-cone bipolar' = 'Bipolar', 'GABA-Amacrine' = 'Amacrine')
 CXCR.FD59 <- analysis[['RNA']]@data["CXCR4",] * (analysis$an == "FD59")
 CXCR.FD82 <- analysis[['RNA']]@data["CXCR4",] * (analysis$an == "FD82")
@@ -145,7 +147,19 @@ analysis[['NEW']] <- CreateAssayObject(data = rbind(CXCR.FD59, CXCR.FD82, CXCR.F
 DefaultAssay(analysis) <- "NEW"
 DotPlot(analysis, features = c("CXCR.FD59", "CXCR.FD82",'CXCR.FD125','CXCR.Adult'), dot.scale = 10) 
 
+DotPlot(analysisrgcs, features = c('ACKR3','ADGRG1','ADGRL3','CCR4','CELSR1','CELSR2','CELSR3',
+'CXCR4','DCC','DRD1','DRD2','ERBB4','ESR2','FGFR1','FZD3','GFRA3','GPR173','IL1R1','NR2F1','NR2F2',
+'NR4A2','NSMF','NTRK2','PTCH1','PTPRZ1','ROBO1','ROBO2','ROBO3','UNC5C','UNC5D'), split.by = 'an', cols = c('blue','blue','blue','blue'))
+
 #For FeatureScatter
 RGCCXCR <- merge(D59fetalSRGC, y = c(D82PCfetalSRGC, D125PCfetalSRGC, adultretinaSRGC))
 RGCCXCR$stage <- factor(RGCCXCR$stage, levels = c('FD59','FD82','FD125','Adult'))
 FeatureScatter(RGCCXCR, feature1 = 'CXCR4', feature2 = 'RBPMS', group.by = 'stage', pt.size = 5)
+
+#For the multiple gene analysis
+mp_genes <- read.table(file = "clipboard", sep = "\t", header=TRUE)
+mp_genes <- as.list(mp_genes)
+mp_genes <- lapply(mp_genes, toupper)
+mp_genes <- unlist(mp_genes)
+mp <- unique(mp_genes)
+DotPlot(analysisrgcs, features = mp, split.by = 'an', cols = c('blue','blue','blue','blue'))
