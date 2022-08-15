@@ -147,9 +147,12 @@ analysis[['NEW']] <- CreateAssayObject(data = rbind(CXCR.FD59, CXCR.FD82, CXCR.F
 DefaultAssay(analysis) <- "NEW"
 DotPlot(analysis, features = c("CXCR.FD59", "CXCR.FD82",'CXCR.FD125','CXCR.Adult'), dot.scale = 10) 
 
+analysisrgcs <- subset(analysis, idents = c('RGC'))
+#analysisrgcs$an <- factor(RGCCXCR$stage, levels = c('FD59','FD82','FD125','Adult'))
 DotPlot(analysisrgcs, features = c('ACKR3','ADGRG1','ADGRL3','CCR4','CELSR1','CELSR2','CELSR3',
 'CXCR4','DCC','DRD1','DRD2','ERBB4','ESR2','FGFR1','FZD3','GFRA3','GPR173','IL1R1','NR2F1','NR2F2',
-'NR4A2','NSMF','NTRK2','PTCH1','PTPRZ1','ROBO1','ROBO2','ROBO3','UNC5C','UNC5D'), split.by = 'an', cols = c('blue','blue','blue','blue'))
+'NR4A2','NSMF','NTRK2','PTCH1','PTPRZ1','ROBO1','ROBO2','ROBO3','UNC5C','UNC5D'), split.by = 'an', cols = c('blue','blue','blue','blue')) 
+#Or cols = 'RdBu' for red/blue scale colour
 
 #For FeatureScatter
 RGCCXCR <- merge(D59fetalSRGC, y = c(D82PCfetalSRGC, D125PCfetalSRGC, adultretinaSRGC))
@@ -163,3 +166,8 @@ mp_genes <- lapply(mp_genes, toupper)
 mp_genes <- unlist(mp_genes)
 mp <- unique(mp_genes)
 DotPlot(analysisrgcs, features = mp, split.by = 'an', cols = c('blue','blue','blue','blue'))
+
+
+
+
+
