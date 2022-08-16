@@ -168,6 +168,45 @@ mp <- unique(mp_genes)
 DotPlot(analysisrgcs, features = mp, split.by = 'an', cols = c('blue','blue','blue','blue'))
 
 
+RBPMSexpr <- GetAssayData(D82PCfetalSRGC, assay = 'RNA', slot = 'data')['RBPMS',]
+posrbpms <- names(which(RBPMSexpr>0))
+poscellsRBPMS <- subset(D82PCfetalSRGC, cells = posrbpms)
 
+POU4F2expr <- GetAssayData(D82PCfetalSRGC, assay = 'RNA', slot = 'data')['POU4F2',]
+pospou4f2 <- names(which(POU4F2expr>0))
+poscellspou4f2 <- subset(D82PCfetalSRGC, cells = pospou4f2)
 
+#Escape analysis
+library(escape)
+library(GSEABase)
+library(dittoSeq)
+gene.sets <- list(Multipolar = c("DCX",     "SLC17A6", "NEUROD1", "ACTR2",   "L1CAM",   "STK25",   "CDKN1B",  "CDK5",   
+                                  "NRP1",    "NUAK1",   "KIF21B",  "NHLH1",   "STK24",   "NDEL1",   "PLXNB2",  "RND2",   
+                                 "NEUROD2", "UNC5D",   "PLXNA2",  "AXIN1",   "PLXNA4",  "NEUROD6", "NEUROG2", "PLXND1", 
+                                  "GJA1",    "HTR6"   ),Somal = c("RTN4",     "PAFAH1B1", "RNF7",     "CDH2",     "ZMIZ1",    "CUL5",     "RELN",    
+                                                                  "CRK",      "DIXDC1",   "NCK2",     "ARF6",    "ADGRG1",   "WDR47",    "MBOAT7",  
+                                                                  "CTNNB1",   "PIK3CA",   "LRP8",     "NDEL1",    "SOCS7",    "RAPGEF1",  "LAMB1",   
+                                                                   "DAB2IP",   "FBXO45",   "SRGAP2",   "LIMK1",    "POU3F2",   "DAB1",     "SOCS3",   
+                                                                 "GLI3",     "NR2E1",    "MDGA1",    "FOXG1",    "FUT10",    "CCDC141",  "DISC1",   
+                                                                  "POU3F3",   "LHX6",     "COL3A1",   "P2RY12"), Migration = mp)
+
+#mp is http://www.informatics.jax.org/go/term/GO:0001764
+
+gene.sets1 <- getGeneSets(library = "C5", gene.sets = "GOBP_NEURON_MIGRATION")
+ES <- enrichIt(obj = allmergedpourbp, 
+               gene.sets = gene.sets1, 
+               groups = 1000, cores = 4)
+
+ridgeEnrichment(ES2, gene.set = "GOBP_NEURON_MIGRATION", group = "labeling", add.rug = TRUE) + facet_wrap(~stage, ncol = 1)
+
+allmergedpourbp1 <- allmergedpourbp
+allmergedpourbp1 <- AddMetaData(allmergedpourbp1, ES)
+D82poscellspou4f2 <- RenameIdents(D82poscellspou4f2, 'RGC' = 'POU4F2+')
+D82poscellsRBPMS <- RenameIdents(D82poscellsRBPMS, 'RGC' = 'RBPMS+')
+
+ggplot(migration_allgenes1, aes(x = Gene, y = Timepoint, fill= Amount)) +
+geom_tile(color = "white",
+lwd = 1.5,linetype = 1) + geom_text(aes(label = round(Amount,1), colours = 'black')) + 
+scale_fill_gradientn(colours=c('white','lightblue','blue','darkblue'),guide="colorbar", trans = 'log') + 
+facet_grid(~Migrtype, scale = 'free', space = 'free')
 
