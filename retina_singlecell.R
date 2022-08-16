@@ -17,13 +17,16 @@ library(Matrix)
 
 library(dittoSeq)
 
+#Download and import the data
 data_dir <- 'C:/Users/Emil/BaranovLab/Retina/D59_fetal_filtered_gene_bc_matrices/GRCh38'
 list.files(data_dir)
 D59fetal <- Read10X(data.dir = data_dir)
 D59fetalS = CreateSeuratObject(counts = D59fetal)
 
+#This is important in future during ScaleData
 memory.limit(size=56000)
 
+#Import S/G2M cell cycle genes
 s.genes <- cc.genes.updated.2019$s.genes
 g2m.genes <- cc.genes.updated.2019$g2m.genes
 
@@ -42,13 +45,16 @@ DimPlot(object = Seurat, reduction = "umap")
 return (Seurat)
 }
 
+#Quantify the RB/MT, cell cycle expression levels and process the data
 D59fetalS[["percent.rb"]] <- PercentageFeatureSet(D59fetalS, pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
 D59fetalS[["percent.mt"]] <- PercentageFeatureSet(D59fetalS, pattern = "^MT-")
 D59fetalS <- CellCycleScoring(D59fetalS, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE)
 D59fetalS <- subset(D59fetalS, subset = nCount_RNA > 1000 & nCount_RNA < 20000 & nFeature_RNA > 600 & nFeature_RNA < 6000 & percent.mt < 15 & percent.rb < 30)
-D59fetalS <- ScaleData(D59fetalS, verbose = T, vars.to.regress = c('nCount_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+D59fetalS <- ScaleData(D59fetalS, verbose = T, vars.to.regress = c('nCount_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score")) 
+#If receive the error for nbins during the ScaleData, run NormalizeData before it
 D59fetalS <- ProcessSeu(D59fetalS)
 
+#Basic visualisation
 FeaturePlot(D59fetalS, features = c('RBPMS'))
 DimPlot(D59fetalS, reduction = 'umap', label = TRUE, repel = TRUE)
 
@@ -60,6 +66,7 @@ DimPlot(D59fetalS, reduction = 'umap', label = TRUE, repel = TRUE)
 #D59fetalS2 <- subset(D59fetalS2, subset = type != 'NA')
 #D59fetalS2 <- RenameIdents(object = D59fetalS2, '0' = 'RGC', '1' = 'T1', '2' = 'RGC','3' = 'Progenitors', '4' = 'T1', '5' = 'Amacrine', '6' = 'RGC', '7' = 'Progenitors', '8' = 'Progenitors')
 
+#To find the DEGs
 D59fetalS.markers <- FindAllMarkers(D59fetalS, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
 
 D59fetalS.markers %>%
@@ -97,9 +104,9 @@ data.anchors <- FindIntegrationAnchors(object.list = integration_list, anchor.fe
 
 data.combined <- IntegrateData(anchorset = data.anchors)
 
-pocpocGHsocsocGHpocVsocV <- ProcessInt(data.combined)
+finaldata <- ProcessInt(data.combined)
 
-#For saving the Seurat objects
+#For saving/loading the Seurat objects
 SaveH5Seurat(D125PCfetalS1, 'C://Users/Emil/10X/scretina/FD125.h5Seurat', overwrite = TRUE)
 seuratobject <- LoadH5Seurat('C://Users/Emil/10X/scretina/FD125.h5Seurat')
 
@@ -153,21 +160,24 @@ DotPlot(analysisrgcs, features = c('ACKR3','ADGRG1','ADGRL3','CCR4','CELSR1','CE
 'CXCR4','DCC','DRD1','DRD2','ERBB4','ESR2','FGFR1','FZD3','GFRA3','GPR173','IL1R1','NR2F1','NR2F2',
 'NR4A2','NSMF','NTRK2','PTCH1','PTPRZ1','ROBO1','ROBO2','ROBO3','UNC5C','UNC5D'), split.by = 'an', cols = c('blue','blue','blue','blue')) 
 #Or cols = 'RdBu' for red/blue scale colour
-
+plot <- DotPlot(D59fetalSre06, features = c('ADGRG1','ADGRL3','CCR4','CELSR1','CELSR2','CELSR3',
+                                    'CXCR4','DCC','DRD1','DRD2','ERBB4','ESR2','FZD3','GFRA3','GPR173','IL1R1','NR2F1','NR2F2',
+                                    'NR4A2','NSMF','NTRK2','PTPRZ1','ROBO1','ROBO2','ROBO3','UNC5C','UNC5D'),  cols = 'RdBu', dot.scale = 20)
+plot + theme(axis.text.x = element_text(angle = 315, family = 'Arial'), axis.text.y = element_text(family = 'Arial'))
 #For FeatureScatter
 RGCCXCR <- merge(D59fetalSRGC, y = c(D82PCfetalSRGC, D125PCfetalSRGC, adultretinaSRGC))
 RGCCXCR$stage <- factor(RGCCXCR$stage, levels = c('FD59','FD82','FD125','Adult'))
 FeatureScatter(RGCCXCR, feature1 = 'CXCR4', feature2 = 'RBPMS', group.by = 'stage', pt.size = 5)
 
 #For the multiple gene analysis
-mp_genes <- read.table(file = "clipboard", sep = "\t", header=TRUE)
+mp_genes <- read.table(file = "clipboard", sep = "\t", header=TRUE) #Read the file with list of the genes
 mp_genes <- as.list(mp_genes)
-mp_genes <- lapply(mp_genes, toupper)
+mp_genes <- lapply(mp_genes, toupper) 
 mp_genes <- unlist(mp_genes)
 mp <- unique(mp_genes)
 DotPlot(analysisrgcs, features = mp, split.by = 'an', cols = c('blue','blue','blue','blue'))
 
-
+#For RBPMS/POU4F2 populations division
 RBPMSexpr <- GetAssayData(D82PCfetalSRGC, assay = 'RNA', slot = 'data')['RBPMS',]
 posrbpms <- names(which(RBPMSexpr>0))
 poscellsRBPMS <- subset(D82PCfetalSRGC, cells = posrbpms)
@@ -192,18 +202,22 @@ gene.sets <- list(Multipolar = c("DCX",     "SLC17A6", "NEUROD1", "ACTR2",   "L1
 
 #mp is http://www.informatics.jax.org/go/term/GO:0001764
 
+#Download the genesets from MSigDb
 gene.sets1 <- getGeneSets(library = "C5", gene.sets = "GOBP_NEURON_MIGRATION")
+#Perform the matrix enrichment
 ES <- enrichIt(obj = allmergedpourbp, 
                gene.sets = gene.sets1, 
                groups = 1000, cores = 4)
 
 ridgeEnrichment(ES2, gene.set = "GOBP_NEURON_MIGRATION", group = "labeling", add.rug = TRUE) + facet_wrap(~stage, ncol = 1)
 
+#allmergedpourbp is the Seurat object with merged RBPMS/POU4F2 subsets of RGCs for FD59,FD82,FD125 and Adult
 allmergedpourbp1 <- allmergedpourbp
 allmergedpourbp1 <- AddMetaData(allmergedpourbp1, ES)
 D82poscellspou4f2 <- RenameIdents(D82poscellspou4f2, 'RGC' = 'POU4F2+')
 D82poscellsRBPMS <- RenameIdents(D82poscellsRBPMS, 'RGC' = 'RBPMS+')
 
+#To generate the heatmap
 ggplot(migration_allgenes1, aes(x = Gene, y = Timepoint, fill= Amount)) +
 geom_tile(color = "white",
 lwd = 1.5,linetype = 1) + geom_text(aes(label = round(Amount,1), colours = 'black')) + 
