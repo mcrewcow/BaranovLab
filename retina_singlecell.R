@@ -208,7 +208,10 @@ gene.sets1 <- getGeneSets(library = "C5", gene.sets = "GOBP_NEURON_MIGRATION")
 ES <- enrichIt(obj = allmergedpourbp, 
                gene.sets = gene.sets1, 
                groups = 1000, cores = 4)
-
+ES2 <- data.frame(allmergedpourbp1[[]], Idents(allmergedpourbp1))
+colnames(ES2)[ncol(ES2)] <- "cluster"
+ES2$stage <- factor(ES2$stage, levels = c('FD59','FD82','FD125','Adult'))
+ES2$labeling <- factor(ES2$labeling, levels = c('RBPMS+','POU4F2+'))
 ridgeEnrichment(ES2, gene.set = "GOBP_NEURON_MIGRATION", group = "labeling", add.rug = TRUE) + facet_wrap(~stage, ncol = 1)
 
 #allmergedpourbp is the Seurat object with merged RBPMS/POU4F2 subsets of RGCs for FD59,FD82,FD125 and Adult
