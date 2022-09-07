@@ -58,3 +58,31 @@ rgcsfd59 <- RenameIdents(rgcsfd59, 'Maintenance of syn structure - Maintenance o
  Pos reg syn plast +- Postsyn act cytosk org +- Presyn act zone org -' = '1', 'Maintenance of syn structure + Maintenance of postsyn spec structure -
  Maintenance of presyn act zone structure + Pos reg syn plast - Postsyn act cytosk org - Presyn act zone org +' = '3', 'Maintenance of syn structure
  + Maintenance of postsyn spec structure - Maintenance of presyn act zone structure +- Pos reg syn plast + Postsyn act cytosk org +- Presyn act zone org +-' = '3.5')
+
+
+#Repetative part for DimPlots + markers
+rgcsfd125$stat <- paste(rgcsfd125$maint_syn_str, rgcsfd125$maint_postsyn_spec_str, rgcsfd125$maint_presyn_act_zone_str, rgcsfd125$pos_reg_syn_plast, rgcsfd125$postsyn_act_cytosk_org, rgcsfd125$presyn_act_zone_org)
+
+DimPlot(rgcsfd125, reduction = 'umap', label = TRUE, label.box = TRUE, split.by = 'maint_syn_str') + ggtitle('FD125')
+DimPlot(rgcsfd125, reduction = 'umap', label = TRUE, label.box = TRUE, split.by = 'maint_postsyn_spec_str') + ggtitle('FD125')
+DimPlot(rgcsfd125, reduction = 'umap', label = TRUE, label.box = TRUE, split.by = 'pos_reg_syn_plast') + ggtitle('FD125')
+DimPlot(rgcsfd125, reduction = 'umap', label = TRUE, label.box = TRUE, split.by = 'postsyn_act_cytosk_org') + ggtitle('FD125')
+DimPlot(rgcsfd125, reduction = 'umap', label = TRUE, label.box = TRUE, split.by = 'presyn_act_zone_org') + ggtitle('FD125')
+DimPlot(rgcsfd125, reduction = 'umap', label = TRUE, label.box = TRUE, split.by = 'maint_presyn_act_zone_str') + ggtitle('FD125')
+
+#active.ident line + markers
+rgcsfd125@active.ident <- rgcsfd125$maint_syn_str
+rgcsfd125@active.ident <- rgcsfd125$maint_presyn_act_zone_str
+rgcsfd125@active.ident <- rgcsfd125$maint_postsyn_spec_str
+rgcsfd125@active.ident <- rgcsfd125$pos_reg_syn_plast
+rgcsfd125@active.ident <- rgcsfd125$postsyn_act_cytosk_org
+rgcsfd125@active.ident <- rgcsfd125$presyn_act_zone_org
+ markers <- FindAllMarkers(rgcsfd125, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+markers %>%
+    group_by(cluster) %>%
+    slice_max(n = 2, order_by = avg_log2FC)
+    
+    markers %>%
+    group_by(cluster) %>%
+    top_n(n = 20, wt = avg_log2FC) -> top20
+write.csv(markers, 'C://Users/Emil/10X/scretina/markers.csv')
