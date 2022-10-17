@@ -90,7 +90,18 @@ survivalfun(fetalescapefd59)
 survivalfun(fetalescapefd82)
 survivalfun(fetalescapefd125)
           
+fetalescapefd59GFRA1 <- GetAssayData(fetalescapefd59, assay = 'RNA', slot = 'data')['GFRA1',]
+poshla <- names(which(fetalescapefd59GFRA1>0))
+poscells <- subset(fetalescapefd59, cells = poshla)
+FeatureScatter(poscells,
+               feature1 = 'GFRA1', feature2 = 'HALLMARK_APOPTOSIS', group.by = 'stage', cols = 'Orange', span = TRUE, pt.size = 2)
 
+gg1 <- FeatureScatter(poscells,
+               feature1 = 'GFRA1', feature2 = 'HALLMARK_APOPTOSIS', group.by = 'stage', cols = 'Orange', pt.size = 2) + ylim(0,3500) + xlim(0.5,3)
+
+gg1 + stat_smooth(method = "lm",
+                formula = y ~ x,
+                geom = "smooth", color = 'Orange', size = 2)
 #save the files after analysis: cellchat and escape
 SaveH5Seurat(FD59cellchatrawusefalsepopsizetrue, 'C://Users/Emil/10X/scretina/FD59cellchat.h5Seurat', overwrite = TRUE)
 saveRDS(FD59cellchatrawusefalsepopsizetrue, file = "C://Users/Emil/10X/scretina/FD59cellchat.rds")
