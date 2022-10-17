@@ -16,7 +16,7 @@ library(Matrix)
 
 library(dittoSeq)
 library(ggalt) #this one we need for geom_xspline() - smooth version of geom_line()
-
+library(escape) #GSEA analysis for BDNF/GDNF-apoptosis correlation
 #load h5seurat files 
 FD59  <- LoadH5Seurat('C://Users/Emil/10X/scretina/FD59.h5Seurat')
 FD59$stage <- 'FD59' #add stage label
@@ -52,9 +52,17 @@ cellchat <- computeCommunProbPathway(cellchat)
 cellchat <- aggregateNet(cellchat)
 cellchat <- netAnalysis_computeCentrality(cellchat, slot.name = "netP") # the slot 'netP' means the inferred intercellular communication network of signaling pathways
 
-
+computeAveExpr(cellchat, features = c("BDNF","CNTF",'GDNF'), type =  "truncatedMean", trim = 0)
 pairLR.NT <- extractEnrichedLR(cellchat, signaling = 'NT', geneLR.return = FALSE) 
 netAnalysis_contribution(cellchat, signaling = pathways.show) #check the pathway for L-R pairs and their contribution
 LR.show <- pairLR.NT[1,] #choose the L-R part needed
 LR.show
 netVisual_individual(cellchat, signaling = 'NT', pairLR.use = LR.show, layout = "chord", show.legend = TRUE) #generate the chord plot
+
+
+ESCAPE
+________
+
+#save the files after analysis: cellchat and escape
+SaveH5Seurat(FD59cellchatrawusefalsepopsizetrue, 'C://Users/Emil/10X/scretina/FD59cellchat.h5Seurat', overwrite = TRUE)
+saveRDS(FD59cellchatrawusefalsepopsizetrue, file = "C://Users/Emil/10X/scretina/FD59cellchat.rds")
