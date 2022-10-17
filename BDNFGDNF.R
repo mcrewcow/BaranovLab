@@ -61,7 +61,35 @@ netVisual_individual(cellchat, signaling = 'NT', pairLR.use = LR.show, layout = 
 
 
 ESCAPE
-________
+library(escape)
+RGCfetal <- merge(FD59RGC, y = c(FD82RGC, FD125RGC))
+ES <- enrichIt(obj = RGCfetal,
+gene.sets = gene.sets1,
+groups = 1000, cores = 4)
+RGCfetalescape <- AddMetaData(RGCfetal, ES)
+ES2 <- data.frame(RGCfetalescape [[]], Idents(RGCfetalescape))
+colnames(ES2)[ncol(ES2)] <- "cluster"
+ES2$stage <- factor(ES2$stage, levels = c('FD59','FD82','FD125'))
+fetalescapefd59 <- subset(fetalescape, subset = stage == 'FD59')
+fetalescapefd82 <- subset(fetalescape, subset = stage == 'FD82')
+fetalescapefd125 <- subset(fetalescape, subset = stage == 'FD125')
+
+genessurvival <- c('GDNF','BDNF','NTRK2','GFRA1')
+
+pathways <- c('HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY','HALLMARK_APOPTOSIS','HALLMARK_DNA_REPAIR')
+
+survivalfun <- function(escape_object) {
+    for(i in 1:length(pathways)) {
+        for(j in 1:length(genessurvival)) {
+            p <- FeatureScatter(escape_object,
+                                feature1 = genessurvival[j], feature2 = pathways[i], group.by = 'stage')
+            ifelse(i == 1 & j == 1, ggsum <- p, ggsum <- ggsum + p) } }
+    print(ggsum) }
+
+survivalfun(fetalescapefd59)
+survivalfun(fetalescapefd82)
+survivalfun(fetalescapefd125)
+          
 
 #save the files after analysis: cellchat and escape
 SaveH5Seurat(FD59cellchatrawusefalsepopsizetrue, 'C://Users/Emil/10X/scretina/FD59cellchat.h5Seurat', overwrite = TRUE)
