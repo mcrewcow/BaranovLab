@@ -64,5 +64,9 @@ tabfun <- function(matgenerated) {
             stat_function(fun=function3,aes(colour="Retina Receptor"), size=1.5) +
             stat_function(fun=function4, aes(colour='RGC Ligand'), size=1.5) +
             ylim(0,3) + theme_bw()
-        ifelse(i == 1, ggsum <- p, ggsum <- ggsum + p + plot_layout(guides = "collect") & theme(legend.position = "bottom")) } 
+         ifelse(i == 1, ggsum <- p +xlab('Age') + ylab('Expression') +
+                   theme(axis.text.y=element_blank(),
+                         axis.text.x=element_blank()), ggsum <- ggsum + p +xlab('Age') + ylab('Expression') +
+                   theme(axis.text.y=element_blank(),
+                         axis.text.x=element_blank()) + plot_layout(guides = "collect") & theme(legend.position = "bottom")) } 
     print(ggsum)}
