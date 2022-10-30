@@ -178,71 +178,28 @@ exprassign3 <- function(tabletexpr, tabletall, tabletfinal) {
     return(tabletfinal) } 
 int4 <- exprassign3(p, int3, int4)
 
+matrixlr[is.na(matrixlr)] <- 0
 
-tabfunfinal <- function(matgenerated, humanrgcdataset, humandataset) {
+tabfunfinal <- function(matgenerated) {
     matgenerated$barcode <- 'NA'
     for(i in 1:length(matgenerated$RecRGCFD59)) {
-        if(matgenerated$R1[i] %in% humanrgcdataset[['RNA']]@data@Dimnames[[1]]) {
-            gene.Adult <- humanrgcdataset[['RNA']]@data[matgenerated$R1[i],] * (humanrgcdataset$stage == "Adult")
-            meanadult <- mean(gene.Adult)
-            sdadult <- sd(gene.Adult)
-            maximumfetal <- which.max(matgenerated[i,9:11])
-            ifelse(maximumfetal == '2', maximumfetal <- 'FD59', ifelse(maximumfetal == '3', maximumfetal <- 'FD82', maximumfetal <- 'FD125'))
-            gene.Fetal <- humanrgcdataset[['RNA']]@data[matgenerated$R1[i],] * (humanrgcdataset$stage == maximumfetal)
-            meanfetal <- mean(gene.Fetal)
-            sdfetal <- sd(gene.Fetal)
             
             ifelse(matgenerated$RecRGCAdult[i] <= 0.01 & matgenerated$RecRGCFD125[i] <= 0.01 & matgenerated$RecRGCFD82[i] <= 0.01 & matgenerated$RecRGCFD59[i] <= 0.01, matgenerated$barcode[i] <- 'aa',
-                   ifelse(meanadult - sdadult > meanfetal + sdfetal, matgenerated$barcode[i] <- 'aA', ifelse(meanadult + sdadult < meanfetal - sdfetal, matgenerated$barcode[i] <- 'Aa', matgenerated$barcode[i] <- 'AA'))) 
-        } else {
-            matgenerated$barcode[i] <- 'aa'
-        }
-        
-        if(matgenerated$Ligand[i] %in% humanrgcdataset[['RNA']]@data@Dimnames[[1]]) {
-            gene.Adult3 <- humanrgcdataset[['RNA']]@data[matgenerated$Ligand[i],] * (humanrgcdataset$stage == "Adult")
-            meanadult3 <- mean(gene.Adult3)
-            sdadult3 <- sd(gene.Adult3)
-            maximumfetal3 <- which.max(matgenerated[i,5:7])
-            ifelse(maximumfetal3 == '2', maximumfetal3 <- 'FD59', ifelse(maximumfetal3 == '3', maximumfetal3 <- 'FD82', maximumfetal3 <- 'FD125'))
-            gene.Fetal3 <- humanrgcdataset[['RNA']]@data[matgenerated$Ligand[i],] * (humanrgcdataset$stage == maximumfetal3)
-            meanfetal3 <- mean(gene.Fetal3)
-            sdfetal3 <- sd(gene.Fetal3) 
+                   ifelse(matgenerated$RecRGCAdult[i]  > max(matgenerated$RecRGCFD125[i],matgenerated$RecRGCFD59[i],matgenerated$RecRGCFD82[i]), matgenerated$barcode[i] <- 'aA', ifelse(matgenerated$RecRGCAdult[i]  < min(matgenerated$RecRGCFD125[i],matgenerated$RecRGCFD59[i],matgenerated$RecRGCFD82[i]), matgenerated$barcode[i] <- 'Aa', matgenerated$barcode[i] <- 'AA'))) 
+
+    
             
             ifelse(matgenerated$LigandRGCAdult[i] <= 0.01 & matgenerated$LigandRGCFD125[i] <= 0.01 & matgenerated$LigandRGCFD82[i] <= 0.01 & matgenerated$LigandRGCFD59[i] <= 0.01, matgenerated$barcode[i] <- paste(matgenerated$barcode[i], 'dd', sep = ''),
-                   ifelse(meanadult3 - sdadult3 > meanfetal3 + sdfetal3, matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'dD',sep=''), ifelse(meanadult3 + sdadult3 < meanfetal3 - sdfetal3, matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'Dd',sep=''), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'DD',sep='')))) } else {
-                       matgenerated$barcode[i] <- paste(matgenerated$barcode[i], 'dd', sep = '')
-                   }
+                   ifelse(matgenerated$LigandRGCAdult[i]  > max(matgenerated$LigandRGCFD125[i],matgenerated$LigandRGCFD59[i],matgenerated$LigandRGCFD82[i]), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'dD',sep=''), ifelse(matgenerated$LigandRGCAdult[i]  < min(matgenerated$LigandRGCFD125[i],matgenerated$LigandRGCFD59[i],matgenerated$LigandRGCFD82[i]), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'Dd',sep=''), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'DD',sep='')))) 
         
-        if(matgenerated$Ligand[i] %in% humandataset[['RNA']]@data@Dimnames[[1]]) {
-            
-            gene.Adult1 <- humandataset[['RNA']]@data[matgenerated$Ligand[i],] * (humandataset$stage == "Adult")
-            meanadult1 <- mean(gene.Adult1)
-            sdadult1 <- sd(gene.Adult1)
-            maximumfetal1 <- which.max(matgenerated[i,13:15])
-            ifelse(maximumfetal1 == '2', maximumfetal1 <- 'FD59', ifelse(maximumfetal1 == '3', maximumfetal1 <- 'FD82', maximumfetal1 <- 'FD125'))
-            gene.Fetal1 <- humandataset[['RNA']]@data[matgenerated$Ligand[i],] * (humandataset$stage == maximumfetal1)
-            meanfetal1 <- mean(gene.Fetal1)
-            sdfetal1 <- sd(gene.Fetal1)
+    
             
             ifelse(matgenerated$LigandAdult[i] <= 0.01 & matgenerated$LigandFD125[i] <= 0.01 & matgenerated$LigandFD82[i] <= 0.01 & matgenerated$LigandFD59[i] <= 0.01, matgenerated$barcode[i] <- paste(matgenerated$barcode[i], 'bb', sep = ''),
-                   ifelse(meanadult1 - sdadult1 > meanfetal1 + sdfetal1, matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'bB',sep=''), ifelse(meanadult1 + sdadult1 < meanfetal1 - sdfetal1, matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'Bb',sep=''), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'BB',sep='')))) } else {
-                       matgenerated$barcode[i] <- paste(matgenerated$barcode[i], 'bb', sep = '')
-                   }
+                   ifelse(matgenerated$LigandAdult[i]  > max(matgenerated$LigandFD125[i],matgenerated$LigandFD59[i],matgenerated$LigandFD82[i]), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'bB',sep=''), ifelse(matgenerated$LigandAdult[i]  < min(matgenerated$LigandFD125[i],matgenerated$LigandFD59[i],matgenerated$LigandFD82[i]), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'Bb',sep=''), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'BB',sep='')))) 
         
-        if(matgenerated$R1[i] %in% humandataset[['RNA']]@data@Dimnames[[1]]) {
-            
-            gene.Adult2 <- humandataset[['RNA']]@data[matgenerated$R1[i],] * (humandataset$stage == "Adult")
-            meanadult2 <- mean(gene.Adult2)
-            sdadult2 <- sd(gene.Adult2)
-            maximumfetal2 <- which.max(matgenerated[i,17:19])
-            ifelse(maximumfetal2 == '2', maximumfetal2 <- 'FD59', ifelse(maximumfetal2 == '3', maximumfetal2 <- 'FD82', maximumfetal2 <- 'FD125'))
-            gene.Fetal2 <- humandataset[['RNA']]@data[matgenerated$R1[i],] * (humandataset$stage == maximumfetal2)
-            meanfetal2 <- mean(gene.Fetal2)
-            sdfetal2 <- sd(gene.Fetal2)
+        
             
             ifelse(matgenerated$RecAdult[i] <= 0.01 & matgenerated$RecFD125[i] <= 0.01 & matgenerated$RecFD82[i] <= 0.01 & matgenerated$RecFD59[i] <= 0.01, matgenerated$barcode[i] <- paste(matgenerated$barcode[i], 'cc', sep = ''),
-                   ifelse(meanadult2 - sdadult2 > meanfetal2 + sdfetal2, matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'cC',sep=''), ifelse(meanadult2 + sdadult2 < meanfetal2 - sdfetal2, matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'Cc',sep=''), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'CC',sep='')))) } else {
-                       matgenerated$barcode[i] <- paste(matgenerated$barcode[i], 'cc', sep = '')
-                   } }
+                   ifelse(matgenerated$RecAdult[i]  > max(matgenerated$RecFD125[i],matgenerated$RecFD59[i],matgenerated$RecFD82[i]), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'cC',sep=''), ifelse(matgenerated$RecAdult[i]  < min(matgenerated$RecFD125[i],matgenerated$RecFD59[i],matgenerated$RecFD82[i]), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'Cc',sep=''), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'CC',sep=''))))  }
     
     return(matgenerated)} 
