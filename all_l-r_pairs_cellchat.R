@@ -43,20 +43,27 @@ write.csv(abcd, 'C://Users/Emil/10X/matricall.csv')
 Excel =B2&""&B3
 matabcd <- read.table(file = "clipboard", sep = "\t", header=FALSE)
 
-tabfun <- function(matgenerated) {
+
+barcodesall1 <- int5$barcode
+my_tab <- table(barcodesall1)
+tab_numbers <- as.numeric(my_tab)
+tab_names <- names(my_tab)
+
+tabfun <- function(matgenerated, matnumbers) {
     for(i in 1:length(matgenerated)) {
         tmp <- matgenerated[i]
+        number <- matnumbers[i]
         tmp  <- unlist(strsplit(as.character(tmp), ""))
         ifelse(tmp[1] == 'A',ifelse(tmp[2] == 'A',function1 <- high, function1 <- down),
                ifelse(tmp[2] == 'A',function1 <- up, function1 <- low)) 
-        ifelse(tmp[3] == 'B',ifelse(tmp[4] == 'B',function2 <- high, function2 <- down),
-               ifelse(tmp[4] == 'B',function2 <- up, function2 <- low)) 
-        ifelse(tmp[5] == 'C',ifelse(tmp[6] == 'C',function3 <- high, function3 <- down),
-               ifelse(tmp[6] == 'C',function3 <- up, function3 <- low)) 
-        ifelse(tmp[7] == 'D',ifelse(tmp[8] == 'D',function4 <- high, function4 <- down),
-               ifelse(tmp[8] == 'D',function4 <- up, function4 <- low)) 
+        ifelse(tmp[3] == 'D',ifelse(tmp[4] == 'D',function2 <- high, function2 <- down),
+               ifelse(tmp[4] == 'D',function2 <- up, function2 <- low)) 
+        ifelse(tmp[5] == 'B',ifelse(tmp[6] == 'B',function3 <- high, function3 <- down),
+               ifelse(tmp[6] == 'B',function3 <- up, function3 <- low)) 
+        ifelse(tmp[7] == 'C',ifelse(tmp[8] == 'C',function4 <- high, function4 <- down),
+               ifelse(tmp[8] == 'C',function4 <- up, function4 <- low)) 
         
-        p <- ggplot(data = data.frame(x = c(0,pi)), mapping = aes(x = x))
+        p <- ggplot(data = data.frame(x = c(0,pi)), mapping = aes(x = x)) + ggtitle(number)
         
         p <- p +
             stat_function(fun=function1,aes(colour="RGC Receptor"), size=1.5) +
@@ -64,14 +71,14 @@ tabfun <- function(matgenerated) {
             stat_function(fun=function3,aes(colour="Retina Receptor"), size=1.5) +
             stat_function(fun=function4, aes(colour='RGC Ligand'), size=1.5) +
             ylim(0,3) + theme_bw()
-         ifelse(i == 1, ggsum <- p +xlab('Age') + ylab('Expression') +
+        ifelse(i == 1, ggsum <- p +xlab('Age') + ylab('Expression') +
                    theme(axis.text.y=element_blank(),
                          axis.text.x=element_blank()), ggsum <- ggsum + p +xlab('Age') + ylab('Expression') +
                    theme(axis.text.y=element_blank(),
                          axis.text.x=element_blank()) + plot_layout(guides = "collect") & theme(legend.position = "bottom")) } 
     print(ggsum)}
 
-
+tabfun(tab_names, tab_numbers)
 
 
 CellChatDB <- CellChatDB.human
@@ -184,22 +191,50 @@ tabfunfinal <- function(matgenerated) {
     matgenerated$barcode <- 'NA'
     for(i in 1:length(matgenerated$RecRGCFD59)) {
             
-            ifelse(matgenerated$RecRGCAdult[i] <= 0.01 & matgenerated$RecRGCFD125[i] <= 0.01 & matgenerated$RecRGCFD82[i] <= 0.01 & matgenerated$RecRGCFD59[i] <= 0.01, matgenerated$barcode[i] <- 'aa',
-                   ifelse(matgenerated$RecRGCAdult[i]  > max(matgenerated$RecRGCFD125[i],matgenerated$RecRGCFD59[i],matgenerated$RecRGCFD82[i]), matgenerated$barcode[i] <- 'aA', ifelse(matgenerated$RecRGCAdult[i]  < min(matgenerated$RecRGCFD125[i],matgenerated$RecRGCFD59[i],matgenerated$RecRGCFD82[i]), matgenerated$barcode[i] <- 'Aa', matgenerated$barcode[i] <- 'AA'))) 
+            ifelse(matgenerated$RecRGCAdult[i] <= 0.01 & matgenerated$RecRGCFD125[i] <= 0.01 & 
+                   matgenerated$RecRGCFD82[i] <= 0.01 & matgenerated$RecRGCFD59[i] <= 0.01, matgenerated$barcode[i] <- 'aa',
+                   ifelse(matgenerated$RecRGCAdult[i]  > max(matgenerated$RecRGCFD125[i],matgenerated$RecRGCFD59[i],
+                                                             matgenerated$RecRGCFD82[i]), matgenerated$barcode[i] <- 'aA',
+                          ifelse(matgenerated$RecRGCAdult[i]  < min(matgenerated$RecRGCFD125[i],matgenerated$RecRGCFD59[i],matgenerated$RecRGCFD82[i]),
+                                 matgenerated$barcode[i] <- 'Aa', matgenerated$barcode[i] <- 'AA'))) 
 
     
             
-            ifelse(matgenerated$LigandRGCAdult[i] <= 0.01 & matgenerated$LigandRGCFD125[i] <= 0.01 & matgenerated$LigandRGCFD82[i] <= 0.01 & matgenerated$LigandRGCFD59[i] <= 0.01, matgenerated$barcode[i] <- paste(matgenerated$barcode[i], 'dd', sep = ''),
-                   ifelse(matgenerated$LigandRGCAdult[i]  > max(matgenerated$LigandRGCFD125[i],matgenerated$LigandRGCFD59[i],matgenerated$LigandRGCFD82[i]), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'dD',sep=''), ifelse(matgenerated$LigandRGCAdult[i]  < min(matgenerated$LigandRGCFD125[i],matgenerated$LigandRGCFD59[i],matgenerated$LigandRGCFD82[i]), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'Dd',sep=''), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'DD',sep='')))) 
+            ifelse(matgenerated$LigandRGCAdult[i] <= 0.01 & matgenerated$LigandRGCFD125[i] <= 0.01 &
+                   matgenerated$LigandRGCFD82[i] <= 0.01 & matgenerated$LigandRGCFD59[i] <= 0.01,
+                   matgenerated$barcode[i] <- paste(matgenerated$barcode[i], 'dd',  sep = ''),
+                   ifelse(matgenerated$LigandRGCAdult[i]  > max(matgenerated$LigandRGCFD125[i],
+                                                                matgenerated$LigandRGCFD59[i],matgenerated$LigandRGCFD82[i]),
+                          matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'dD',sep=''),
+                          ifelse(matgenerated$LigandRGCAdult[i]  < min(matgenerated$LigandRGCFD125[i],matgenerated$LigandRGCFD59[i],
+                                                                       matgenerated$LigandRGCFD82[i]),
+                                 matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'Dd',sep=''),
+                                 matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'DD',sep='')))) 
         
     
             
-            ifelse(matgenerated$LigandAdult[i] <= 0.01 & matgenerated$LigandFD125[i] <= 0.01 & matgenerated$LigandFD82[i] <= 0.01 & matgenerated$LigandFD59[i] <= 0.01, matgenerated$barcode[i] <- paste(matgenerated$barcode[i], 'bb', sep = ''),
-                   ifelse(matgenerated$LigandAdult[i]  > max(matgenerated$LigandFD125[i],matgenerated$LigandFD59[i],matgenerated$LigandFD82[i]), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'bB',sep=''), ifelse(matgenerated$LigandAdult[i]  < min(matgenerated$LigandFD125[i],matgenerated$LigandFD59[i],matgenerated$LigandFD82[i]), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'Bb',sep=''), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'BB',sep='')))) 
+            ifelse(matgenerated$LigandAdult[i] <= 0.01 & matgenerated$LigandFD125[i] <= 0.01 &
+                   matgenerated$LigandFD82[i] <= 0.01 & matgenerated$LigandFD59[i] <= 0.01,
+                   matgenerated$barcode[i] <- paste(matgenerated$barcode[i], 'bb', sep = ''),
+                   ifelse(matgenerated$LigandAdult[i]  > max(matgenerated$LigandFD125[i],
+                                                             matgenerated$LigandFD59[i],matgenerated$LigandFD82[i]),
+                          matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'bB',sep=''),
+                          ifelse(matgenerated$LigandAdult[i]  < min(matgenerated$LigandFD125[i],matgenerated$LigandFD59[i],
+                                                                    matgenerated$LigandFD82[i]),
+                                 matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'Bb',sep=''),
+                                 matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'BB',sep='')))) 
         
         
             
-            ifelse(matgenerated$RecAdult[i] <= 0.01 & matgenerated$RecFD125[i] <= 0.01 & matgenerated$RecFD82[i] <= 0.01 & matgenerated$RecFD59[i] <= 0.01, matgenerated$barcode[i] <- paste(matgenerated$barcode[i], 'cc', sep = ''),
-                   ifelse(matgenerated$RecAdult[i]  > max(matgenerated$RecFD125[i],matgenerated$RecFD59[i],matgenerated$RecFD82[i]), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'cC',sep=''), ifelse(matgenerated$RecAdult[i]  < min(matgenerated$RecFD125[i],matgenerated$RecFD59[i],matgenerated$RecFD82[i]), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'Cc',sep=''), matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'CC',sep=''))))  }
+            ifelse(matgenerated$RecAdult[i] <= 0.01 & matgenerated$RecFD125[i] <= 0.01 &
+                   matgenerated$RecFD82[i] <= 0.01 & matgenerated$RecFD59[i] <= 0.01,
+                   matgenerated$barcode[i] <- paste(matgenerated$barcode[i], 'cc', sep = ''),
+                   ifelse(matgenerated$RecAdult[i]  > max(matgenerated$RecFD125[i],
+                                                          matgenerated$RecFD59[i],matgenerated$RecFD82[i]),
+                          matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'cC',sep=''),
+                          ifelse(matgenerated$RecAdult[i]  < min(matgenerated$RecFD125[i],
+                                                                 matgenerated$RecFD59[i],matgenerated$RecFD82[i]),
+                                 matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'Cc',sep=''),
+                                 matgenerated$barcode[i] <- paste(matgenerated$barcode[i],'CC',sep=''))))  }
     
     return(matgenerated)} 
