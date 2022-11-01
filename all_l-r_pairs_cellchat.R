@@ -1,3 +1,4 @@
+#generate 4 basic functions showing possible gene expression shifts
 low <- function(x) {
     0 + runif(1, 0, 0.7)
 }
@@ -17,7 +18,7 @@ down <- function(x) {
 library(ggplot2)
 library(patchwork)
 
-
+#manual matrix generation for 256 patterns
 AA <- c('AA','Aa','aA','aa')
 dim(AA) <- c(1,4)
 BB <- c('BB','Bb','bB','bb')
@@ -43,12 +44,14 @@ write.csv(abcd, 'C://Users/Emil/10X/matricall.csv')
 Excel =B2&""&B3
 matabcd <- read.table(file = "clipboard", sep = "\t", header=FALSE)
 
+#this part should be performed if you have already prepared the matrix. If no, check below
+#After the last function is done, to visualize the results, subset the barcodes
+barcodesall1 <- int5$barcode #subset
+my_tab <- table(barcodesall1) #now you have barcode and its amount
+tab_numbers <- as.numeric(my_tab) #subset amounts
+tab_names <- names(my_tab) #subset names
 
-barcodesall1 <- int5$barcode
-my_tab <- table(barcodesall1)
-tab_numbers <- as.numeric(my_tab)
-tab_names <- names(my_tab)
-
+#run function to visualize your patterns. This could be also performed for all 256 patterns if the input matrix is the one generated above
 tabfun <- function(matgenerated, matnumbers) {
     for(i in 1:length(matgenerated)) {
         tmp <- matgenerated[i]
@@ -78,13 +81,15 @@ tabfun <- function(matgenerated, matnumbers) {
                          axis.text.x=element_blank()) + plot_layout(guides = "collect") & theme(legend.position = "bottom")) } 
     print(ggsum)}
 
-tabfun(tab_names, tab_numbers)
+tabfun(tab_names, tab_numbers) #run the function
 
-
-CellChatDB <- CellChatDB.human
+#load CellChat
+library(CellChat)
+CellChatDB <- CellChatDB.human #download human/mouse L-R database from CellChat
 interaction_input <- CellChatDB$interaction
 library(dplyr)
 library(tidyr)
+#Here we work on multiple L - one R, one L - multiple R combinations to build unique pairs
 int1 <- interaction_input %>% separate(interaction_name, c('Ligand','R1','R2'))
 
 int2 <- int1[c(1:3)]
@@ -96,13 +101,14 @@ lrpairs <- function(tablet) {
     return(tablet) }
 
 int2 <- lrpairs(int2)
-df_added <- data.frame(Ligand = c('ITGA4','ITGA9','ITGB1','ITGB7','VSIR'), R1 = c('VCAM1','VCAM1','VCAM1','VCAM1','IGSF11'))
+df_added <- data.frame(Ligand = c('ITGA4','ITGA9','ITGB1','ITGB7','VSIR'), R1 = c('VCAM1','VCAM1','VCAM1','VCAM1','IGSF11')) #manual addition of leftovers
 int3 <- int2[c(1:2)]
 int3 <- rbind(int3, df_added)	 
 human <- merge(FD59, y = c(FD82, FD125, adult))
 humanRGC <- subset(human, idents = c('RGC'))
 human$labels <- human@active.ident
 DefaultAssay(humanRGC) <- 'RNA'
+#start building matrix with expression amounts for Retina R/L, RGC R/L
 p <- AverageExpression(humanRGC, features = int3$Ligand, assays = 'RNA', group.by = 'stage')
 p <- as.data.frame(p)
 int3 <- int3 %>% distinct(Ligand, R1, .keep_all = TRUE)
@@ -185,8 +191,11 @@ exprassign3 <- function(tabletexpr, tabletall, tabletfinal) {
     return(tabletfinal) } 
 int4 <- exprassign3(p, int3, int4)
 
+
+#remove NAs
 matrixlr[is.na(matrixlr)] <- 0
 
+#function to generate the 8-lettered barcode for every pattern out of 256
 tabfunfinal <- function(matgenerated) {
     matgenerated$barcode <- 'NA'
     for(i in 1:length(matgenerated$RecRGCFD59)) {
