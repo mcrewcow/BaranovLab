@@ -3,8 +3,8 @@ pvis <- ggplot(p, aes(x=rgcs.meta.data.GOBP_MAINTENANCE_OF_SYNAPSE_STRUCTURE.rgc
 ggplotly(pvis)
 cellidspos <- names(which(rgcs$stage == 'Adult' & rgcs$GOBP_MAINTENANCE_OF_SYNAPSE_STRUCTURE >= 0.45))
 cellidsneg <- names(which(rgcs$stage == 'Adult' & rgcs$GOBP_MAINTENANCE_OF_SYNAPSE_STRUCTURE < 0.45))
-rgcs <- SetIdent(rgcs, cells = cellidspos, value = 'Maintenance of syn structure +')
-rgcs <- SetIdent(rgcs, cells = cellidsneg, value = 'Maintenance of syn structure -')
+rgcs <- SetIdent(rgcs, cells = cellidspos, value = '1')
+rgcs <- SetIdent(rgcs, cells = cellidsneg, value = '0')
 
 #Same for FD125,FD82,FD59
 
@@ -14,9 +14,9 @@ cellidspos <- names(which(rgcs$stage == 'Adult' & rgcs$GOBP_MAINTENANCE_OF_PRESY
 cellidsneg <- names(which(rgcs$stage == 'Adult' & rgcs$GOBP_MAINTENANCE_OF_PRESYNAPTIC_ACTIVE_ZONE_STRUCTURE < 0.471))
 cellidsmid <- names(which(rgcs$stage == 'Adult' & rgcs$GOBP_MAINTENANCE_OF_PRESYNAPTIC_ACTIVE_ZONE_STRUCTURE >= 0.471 & 
 rgcs$GOBP_MAINTENANCE_OF_PRESYNAPTIC_ACTIVE_ZONE_STRUCTURE < 0.714))
-rgcs <- SetIdent(rgcs, cells = cellidspos, value = 'Maintenance of presyn act zone structure +')
-rgcs <- SetIdent(rgcs, cells = cellidsneg, value = 'Maintenance of presyn act zone structure -')
-rgcs <- SetIdent(rgcs, cells = cellidsmid, value = 'Maintenance of presyn act zone structure +-')
+rgcs <- SetIdent(rgcs, cells = cellidspos, value = '1')
+rgcs <- SetIdent(rgcs, cells = cellidsneg, value = '0')
+rgcs <- SetIdent(rgcs, cells = cellidsmid, value = '0.5')
 
 rgcsfd59 <- subset(rgcs, subset = stage == 'FD59')
 
