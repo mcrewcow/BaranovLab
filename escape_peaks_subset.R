@@ -186,6 +186,24 @@ avexprfun <- function(average_expression_table) {
 }
 
 
+test <- avexprfun(avtest)
+table(test$barcode)
+test$genes <- rownames(test)
+barcodes <- test[, c("genes", "barcode")]
+barcodes <- barcodes[!(is.na(barcodes$barcode) | barcodes$barcode==""), ]
 
+install.packages('VennDiagram')               
 
+library('VennDiagram')  
 
+install.packages('venneuler')
+
+library('venneuler')
+
+ggplot(my_data, aes(x = barcode, y = SHIFT, label = GENE)) + 
+geom_text_repel(data=my_data, aes(label=GENE),position = position_jitter(seed = 1),
+                color = c('blue','blue','gray','gray','red','blue','blue','blue','gray','gray',
+                          'blue','gray','blue','gray','gray','gray','blue','blue','gray','gray','gray',
+                          'blue','blue','blue','blue','blue','blue','red','gray','red','red','red','gray','gray')) +
+geom_jitter(position = position_jitter(seed = 1)) + geom_hline(yintercept=0) + geom_hline(yintercept=50, linetype="dashed", color = "red") + 
+geom_hline(yintercept=-50, linetype="dashed", color = "red") + theme_bw()
