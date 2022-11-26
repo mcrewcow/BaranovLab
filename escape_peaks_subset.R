@@ -121,7 +121,7 @@ table(mousefetalRGC$stat[mousefetalRGC$stage == 'E14'])
 
 ggplot(my_data1, aes(x = Day, y = Percentage, fill = Amount)) + geom_bar(position="stack", stat="identity") 
 
-
+#for mouse
 gene_list <- c('ADORA1',	'ADRA2A',	'ADRB2',	'AGTR2',	'AHSG',	'AKT1',	'AKT2',	'ALK',	'FASLG',	'AR',	'AREG',	'ARNT',	'AXL',	'BDKRB2',
                'CEACAM1',	'BLK',	'BRAF',	'DDR1',	'RUNX2',	'CD4',	'CD7',	'CD8A',	'CD8B',	'CD63',	'CDH3',	'CDH13',	'CHN1',	'CHRNA3',
                'AP3S1',	'CSF1R',	'CSPG4',	'CCN2',	'CTNNB1',	'DOK1',	'EFNA1',	'EFNA2',	'EFNA3',	'EFNA4',	'EFNA5',	'EFNB1',	'EFNB2',
@@ -156,7 +156,20 @@ gene_list <- c('ADORA1',	'ADRA2A',	'ADRB2',	'AGTR2',	'AHSG',	'AKT1',	'AKT2',	'AL
                'AKT1S1','BCAR1','BDNF','CASP3','CORO1A','CYFIP1','CYFIP2','DDIT4','DOK5','GFRA1','HAP1','KIDINS220','MAGI2','NDN','NGF','NTF3','NTF4',
                'NTRK1','NTRK2','NTRK3','PPP2R5B','PTPN11','RAF1','RAP1A','RAPGEF1','RAPGEF2','SORT1','SOS1','SPRY1','SPRY2','SRC','TMEM108','WASF1',
                'ZDHHC17','ZFYVE27', 'ARF6', 'RAB3A', 'CTBP2', 'ERC1', 'PCLO', 'DBN1', 'DBNL', 'INA', 'RAB3A','CBLN2','CTBP2','DBN1','ARF6','TAGLN3',
-               'ERC1','CTBP2','PCLO','MALAT1','MT-CYB', 'DNAJC6','SAMD4A','STAT3','RALBP1')
+               'ERC1','CTBP2','PCLO','MALAT1','MT-CYB', 'DNAJC6','SAMD4A','STAT3','RALBP1',
+             #from here after cellchat 
+               'Ncam1', 'L1cam', 'Nrxn1', 'Nlgn1', 'Mpzl1', 'Efna5', 'Nrxn3', 'Nrxn2', 'Ephb2', 'Cntn2', 'Cntnap2', 'Mstn', 'Tgfbr1', 'Acvr2b',
+               #from here after individual pathway DEGs 
+               'Rab3a','Sdf4','Sncg','Tubb2a','Mapt','Meg3','Ly6h','Uchl1','Stmn3','Pcsk1n','Ina','Stmn4','Syt4','Nefl','Snrpn','Aplp1',
+               'S100a10','Rab6b','Tppp3','Apbb2','Rbpms','Celf4','Rac3','Map1lc3a','Islr2','Nsg1','Calb2','Snap25','Runx1t1','Mgst3','Pou4f1','Gng3','Gadd45a', 
+               'Erc1','Ly6h','Meg3','Sncg','Tubb2a','Snhg11','Mapt','Pcsk1n','Snrpn','Nell2','Rab6b','Syt4','Celf4','Rbpms','Islr2','Apbb2','Tppp3','Map1lc3a','Calb2',
+               'Dbn1','Cplx2','Islr2','Hbb-bs','Ap2m1','Oaz2','Snrpn','Mtch1','Prelid1','Fscn1','Map1lc3a','Uchl1','Arhgdia','Rab3a','Cotl1','Ctxn1',
+               'Erc1','Erc2','Ly6h','Mapt','Sncg','Tubb2a','Snhg11','Meg3','Pcsk1n','Snrpn','Rab6b','Islr2','Syt4','Rbpms','Tppp3','Apbb2','Map1lc3a','Celf4','Calb2',
+               'Arf6','Snhg11','Nell2','Ly6h','Snrpn','Rab3a','Meg3','Pcsk1n','Calb2',
+               'Dbnl','Actg1','Dbn1','Ina','Rab3a','Islr2','Snrpn','Uchl1','Tubb2a','Thra','Sncg','Mapt','Pcsk1n','Meg3','Map1lc3a','Tppp3','Ly6h','Apbb2','Calb2',
+               'Snhg11','Gadd45a','Mdk','Prdx1','Gm10260','Hes6','H2afv','Dlx2','Hes5','Btg2','Mfng','Btbd17',
+               'Rassf4','Ccnd1','Itm2a','Hmgn3','Tead2','Alyref','Sfrp2','Fos')
+
 
 gene_list <- as.list(gene_list)
 gene_list  <- lapply(gene_list , tolower) 
