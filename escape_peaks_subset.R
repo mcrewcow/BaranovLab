@@ -270,3 +270,8 @@ geom_text_repel(data=my_data, aes(label=GENE),position = position_jitter(seed = 
                           'blue','blue','blue','blue','blue','blue','red','gray','red','red','red','gray','gray')) +
 geom_jitter(position = position_jitter(seed = 1)) + geom_hline(yintercept=0) + geom_hline(yintercept=50, linetype="dashed", color = "red") + 
 geom_hline(yintercept=-50, linetype="dashed", color = "red") + theme_bw()
+
+#to apply organoids filter
+ggplot(my_data, aes(x = Sample, y = Expr, fill = humancorr, color = humancorr)) +
+geom_text_repel(data = my_data, aes(label = GENE), max.overlaps = 60) + geom_jitter(width = 0.1) + 
+scale_y_continuous(trans='log2') + geom_line(aes(group = GENE)) + theme_bw() + facet_wrap(~GENE, scale = 'free')
