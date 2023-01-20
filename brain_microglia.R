@@ -20,3 +20,8 @@ DoHeatmap(hammond, features = top20$gene, slot = 'data') + NoLegend()
 
 hammond_normal <- subset(hammond, idents = c('E14','P4/P5','P30','P100','P540'))
 #rerun DEG for normal only
+
+
+#сделать фигуру male+female (VEGFA otdelno) kak FD vs OD try merge/separate by states - homeostatic, inflammatory, IFN response, proinflammatory (DAM),
+    #DEGs (B2m to inflammatory, neonatal / aging)
+#heatmap no gene labels, smaller size
