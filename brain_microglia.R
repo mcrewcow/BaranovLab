@@ -16,7 +16,7 @@ hammond.markers %>%
 hammond.markers %>%
     group_by(cluster) %>%
     top_n(n = 20, wt = avg_log2FC) -> top20
-DoHeatmap(hammond, features = top20$gene) + NoLegend()
+DoHeatmap(hammond, features = top20$gene, slot = 'data') + NoLegend()
 
 hammond_normal <- subset(hammond, idents = c('E14','P4/P5','P30','P100','P540'))
 #rerun DEG for normal only
