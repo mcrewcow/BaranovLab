@@ -35,7 +35,7 @@ g2m.genes <- cc.genes.updated.2019$g2m.genes
 ProcessSeu <- function(Seurat){
 Seurat <- NormalizeData(Seurat)
 Seurat <- FindVariableFeatures(Seurat, selection.method = "vst", nfeatures = 2000)
-Seurat <- ScaleData(Seurat)
+Seurat <- ScaleData(Seurat) #could be replaced with SCTransform
 Seurat <- RunPCA(Seurat)
 Seurat <- FindNeighbors(Seurat, dims = 1:10)
 Seurat <- FindClusters(Seurat, resolution = 0.5)
