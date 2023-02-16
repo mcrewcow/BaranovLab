@@ -1,4 +1,3 @@
-#Petr BaranovLab <br />
 #Controlling Donor and Newborn Neuron Migration and Maturation in the Eye Through Microenvironment Engineering
 In this repository you may find the information for reproducing the bioinformatical analysis of human [fetal, organoids](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE142526) and [adult](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE196235) retina datasets. <br />
 <br />
