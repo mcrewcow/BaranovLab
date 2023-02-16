@@ -17,5 +17,5 @@ For any questions, suggestions and ideas, send an e-mail to:
 1. Jonathan R Soucy, jonathan_soucy@meei.harvard.edu, corresponding author
 2. Petr Baranov, petr_baranov@meei.havard.edu, corresponding author, PI
 3. Emil Kriukov, ekriukov@meei.harvard.edu, bioinformatics
-<br />
+
 Paper preprint is available on [bioRxiv](https://www.biorxiv.org/content/10.1101/2022.09.29.510158v1.full).
