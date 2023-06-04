@@ -40,3 +40,25 @@ levi <- subset(levi, subset = nCount_RNA > 300 & nCount_RNA < 10000 & nFeature_R
 levi <- ScaleData(levi, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
 
 levi <- ProcessSeu(levi)
+
+RDoublet <- function(tmp){
+  sweep.res.list <- paramSweep_v3(tmp, PCs = 1:30, sct = FALSE)
+  sweep.stats <- summarizeSweep(sweep.res.list, GT = FALSE)
+  bcmvn <- find.pK(sweep.stats)
+  pKopt <- as.numeric(as.character(bcmvn$pK[bcmvn$BCmetric == max(bcmvn$BCmetric)]))
+  pKopt <- pKopt[order(pKopt, decreasing = TRUE) ]
+  pKopt <- pKopt[1]
+  homotypic.prop <- modelHomotypic(tmp$seurat_clusters) 
+  nExp_poi <- round(0.1*length(colnames(tmp)))  ## Assuming 10% doublet formation rate 
+  nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+  tmp <- doubletFinder_v3(tmp, PCs = 1:30, pN = 0.25, pK = pKopt, nExp = nExp_poi, reuse.pANN = FALSE)
+  tmp <- doubletFinder_v3(tmp, PCs = 1:30, pN = 0.25, pK = pKopt, nExp = nExp_poi.adj, reuse.pANN = paste("pANN_0.25",pKopt,nExp_poi, sep="_"))
+  return (tmp) 
+}
+
+remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
+library(DoubletFinder)
+
+levi <- RDoublet(levi)
+levi <- subset(levi, subset = DF.classifications_0.25_0.04_241 == 'Singlet')
+levi <- subset(levi, subset = DF.classifications_0.25_0.04_191 == 'Singlet')
