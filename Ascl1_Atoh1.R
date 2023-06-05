@@ -91,3 +91,13 @@ data.combined <- IntegrateData(anchorset = data.anchors)
 
 levi.combined <- ProcessInt(data.combined)
 
+levi.combined.markers <- FindAllMarkers(levi.combined, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+
+levi.combined.markers %>%
+  group_by(cluster) %>%
+  slice_max(n = 2, order_by = avg_log2FC)
+
+levi.combined.markers %>%
+  group_by(cluster) %>%
+  top_n(n = 10, wt = avg_log2FC) -> top10
+DoHeatmap(levi.combined, features = top10$gene) + NoLegend()
