@@ -71,4 +71,23 @@ levi_late <- levi
 
 levi_early <- levi
 
+ProcessInt <- function(data.integrated){
+  data.integrated <- ScaleData(data.integrated, verbose = FALSE)
+  data.integrated <- RunPCA(data.integrated, npcs = 30, verbose = FALSE)
+  data.integrated <- FindNeighbors(data.integrated, dims = 1:20)
+  data.integrated <- FindClusters(data.integrated, resolution = 0.5)
+  data.integrated <- RunUMAP(data.integrated, reduction = "pca", dims = 1:20)
+  data.integrated <- RunTSNE(data.integrated,  dims.use = 1:20 )
+}
+
+#Choose the objects for integration
+
+integration_list <- list(levi_late, levi_early)
+
+features <- SelectIntegrationFeatures(object.list = integration_list)
+data.anchors <- FindIntegrationAnchors(object.list = integration_list, anchor.features = features)
+
+data.combined <- IntegrateData(anchorset = data.anchors)
+
+levi.combined <- ProcessInt(data.combined)
 
