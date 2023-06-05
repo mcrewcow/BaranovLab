@@ -62,3 +62,13 @@ library(DoubletFinder)
 levi <- RDoublet(levi)
 levi <- subset(levi, subset = DF.classifications_0.25_0.04_241 == 'Singlet')
 levi <- subset(levi, subset = DF.classifications_0.25_0.04_191 == 'Singlet')
+
+levi <- ProcessSeu(levi)
+
+levi_late <- levi
+
+#repeat for early timepoint
+
+levi_early <- levi
+
+
