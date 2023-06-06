@@ -101,3 +101,6 @@ levi.combined.markers %>%
   group_by(cluster) %>%
   top_n(n = 10, wt = avg_log2FC) -> top10
 DoHeatmap(levi.combined, features = top10$gene) + NoLegend()
+
+SaveH5Seurat(levi.combined, 'G://Levi_Jon/combined.h5Seurat')
+Convert("G://Levi_Jon/combined.h5Seurat", dest = "h5ad")
