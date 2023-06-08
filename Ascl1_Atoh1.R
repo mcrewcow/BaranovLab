@@ -104,3 +104,63 @@ DoHeatmap(levi.combined, features = top10$gene) + NoLegend()
 
 SaveH5Seurat(levi.combined, 'G://Levi_Jon/combined.h5Seurat')
 Convert("G://Levi_Jon/combined.h5Seurat", dest = "h5ad")
+
+library(escape)
+gene.sets1 <- getGeneSets(library = "C5", gene.sets = c("GOBP_GLIAL_CELL_MIGRATION",'GOBP_NEURON_MIGRATION'
+                                                        ,'GOBP_NEURON_MATURATION','GOBP_GLIAL_CELL_DEVELOPMENT',
+                                                        'GOBP_GLIAL_CELL_PROLIFERATION'),species = 'Mus musculus')
+levi.combined <- SetIdent(levi.combined, value = 'orig.ident')
+
+ES <- enrichIt(obj = levi.combined,
+gene.sets = gene.sets1,
+groups = 1000, cores = 8)
+levi.combined <- AddMetaData(levi.combined, ES)
+ES2 <- data.frame(levi.combined[[]], Idents(levi.combined))
+colnames(ES2)[ncol(ES2)] <- "cluster"
+ridgeEnrichment(ES2, gene.set = "GOBP_GLIAL_CELL_MIGRATION", group = 'orig.ident', add.rug = TRUE) 
+
+levi.combined <- SetIdent(levi.combined, value = 'seurat_clusters')
+levi.combined <- RenameIdents(levi.combined, '0'='Transitory',
+                              '1'='Transitory',
+                              '2'='Transitory',
+                              '3'='Transitory',
+                              '4'='Partially muller glia',
+                              '5'='Microglia',
+                              '6'='RGC',
+                              '7'='Cones',
+                              '8'='Mature muller glia',
+                              '9'='AC',
+                              '10'='Early neurons')
+
+levi.combined$EK_anno <- levi.combined@active.ident
+
+
+levi.subset.glia <- subset(levi.combined, idents = c('Partially muller glia','Mature muller glia'))
+
+levi.subset.glia$EK_anno <- levi.subset.glia@active.ident
+
+ES <- enrichIt(obj = levi.subset.glia,
+               gene.sets = gene.sets1,
+               groups = 1000, cores = 8)
+levi.subset.glia <- AddMetaData(levi.subset.glia, ES)
+ES2 <- data.frame(levi.subset.glia[[]], Idents(levi.subset.glia))
+colnames(ES2)[ncol(ES2)] <- "cluster"
+ridgeEnrichment(ES2, gene.set = "GOBP_GLIAL_CELL_MIGRATION", group = 'orig.ident', add.rug = TRUE) + facet_wrap(~EK_anno) 
+
+levi.subset.RGC <- subset(levi.combined, idents = c('RGC'))
+
+levi.subset.RGC$EK_anno <- levi.subset.RGC@active.ident
+
+ES <- enrichIt(obj = levi.subset.RGC,
+               gene.sets = gene.sets1,
+               groups = 1000, cores = 8)
+levi.subset.RGC <- AddMetaData(levi.subset.RGC, ES)
+ES2 <- data.frame(levi.subset.RGC[[]], Idents(levi.subset.RGC))
+colnames(ES2)[ncol(ES2)] <- "cluster"
+ridgeEnrichment(ES2, gene.set = "GOBP_GLIAL_CELL_MIGRATION", group = 'orig.ident', add.rug = TRUE)
+
+DefaultAssay(levi.subset.RGC) <- 'RNA'
+plot <- DotPlot(levi.subset.RGC, features = c('Adgrg1','Adgrl3','Ccr4','Celsr1','Celsr2','Celsr3',
+                                              'Cxcr4','Dcc','Drd1','Drd2','Erbb4','Esr2','Fzd3','Gfra3','Gpr173','Il1r1','Nr2f1','Nr2f2',
+                                              'Nr4a2','Nsmf','Ntrk2','Ptprz1','Robo1','Robo2','Robo3','Unc5c','Unc5d'),  cols = 'RdBu', dot.scale = 10, split.by = 'orig.ident')
+plot + theme(axis.text.x = element_text(angle = 315, family = 'Arial'), axis.text.y = element_text(family = 'Arial'))
