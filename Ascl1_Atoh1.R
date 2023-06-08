@@ -164,3 +164,46 @@ plot <- DotPlot(levi.subset.RGC, features = c('Adgrg1','Adgrl3','Ccr4','Celsr1',
                                               'Cxcr4','Dcc','Drd1','Drd2','Erbb4','Esr2','Fzd3','Gfra3','Gpr173','Il1r1','Nr2f1','Nr2f2',
                                               'Nr4a2','Nsmf','Ntrk2','Ptprz1','Robo1','Robo2','Robo3','Unc5c','Unc5d'),  cols = 'RdBu', dot.scale = 10, split.by = 'orig.ident')
 plot + theme(axis.text.x = element_text(angle = 315, family = 'Arial'), axis.text.y = element_text(family = 'Arial'))
+
+
+
+library(CellChat)
+levi.combined <- RenameIdents(levi.combined, 'AC'='Transitory')
+levi.combined <- subset(levi.combined, idents = c('Microglia'), invert = TRUE)
+table(levi.combined@active.ident)
+
+levi.combined$EK_anno2 <- levi.combined@active.ident
+levi.combined.late <- subset(levi.combined, subset = orig.ident == 'late')
+levi.combined.early <- subset(levi.combined, subset = orig.ident == 'early')
+
+DefaultAssay(levi.combined.early) <- 'RNA'
+cellchat <- createCellChat(object = levi.combined.early , group.by = "EK_anno2")
+CellChatDB <- CellChatDB.mouse
+CellChatDB.use <- CellChatDB
+cellchat@DB <- CellChatDB.use
+cellchat <- subsetData(cellchat)
+cellchat <- identifyOverExpressedGenes(cellchat)
+cellchat <- identifyOverExpressedInteractions(cellchat)
+cellchat <- projectData(cellchat, PPI.mouse)
+cellchat <- computeCommunProb(cellchat, type = "truncatedMean", trim = 0.1, raw.use = FALSE, population.size = FALSE)
+cellchat <- filterCommunication(cellchat, min.cells = 3)
+cellchat <- computeCommunProbPathway(cellchat)
+cellchat <- aggregateNet(cellchat)
+cellchat <- netAnalysis_computeCentrality(cellchat, slot.name = "netP")
+cellchat_levi.early <- cellchat
+
+DefaultAssay(levi.combined.late) <- 'RNA'
+cellchat <- createCellChat(object = levi.combined.late , group.by = "EK_anno2")
+CellChatDB <- CellChatDB.mouse
+CellChatDB.use <- CellChatDB
+cellchat@DB <- CellChatDB.use
+cellchat <- subsetData(cellchat)
+cellchat <- identifyOverExpressedGenes(cellchat)
+cellchat <- identifyOverExpressedInteractions(cellchat)
+cellchat <- projectData(cellchat, PPI.mouse)
+cellchat <- computeCommunProb(cellchat, type = "truncatedMean", trim = 0.1, raw.use = FALSE, population.size = FALSE)
+cellchat <- filterCommunication(cellchat, min.cells = 3)
+cellchat <- computeCommunProbPathway(cellchat)
+cellchat <- aggregateNet(cellchat)
+cellchat <- netAnalysis_computeCentraliy(cellchat, slot.name = "netP")
+cellchat_levi.late <- cellchat
