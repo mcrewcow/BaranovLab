@@ -60,8 +60,8 @@ remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')
 library(DoubletFinder)
 
 levi <- RDoublet(levi)
-levi <- subset(levi, subset = DF.classifications_0.25_0.04_241 == 'Singlet')
-levi <- subset(levi, subset = DF.classifications_0.25_0.04_191 == 'Singlet')
+levi <- subset(levi, subset = DF.classifications_0.25_0.04_241 == 'Singlet') #remove the doublets
+levi <- subset(levi, subset = DF.classifications_0.25_0.04_191 == 'Singlet') #remove the doublets
 
 levi <- ProcessSeu(levi)
 
@@ -103,7 +103,7 @@ levi.combined.markers %>%
 DoHeatmap(levi.combined, features = top10$gene) + NoLegend()
 
 SaveH5Seurat(levi.combined, 'G://Levi_Jon/combined.h5Seurat')
-Convert("G://Levi_Jon/combined.h5Seurat", dest = "h5ad")
+Convert("G://Levi_Jon/combined.h5Seurat", dest = "h5ad") #for further in-python processing
 
 library(escape)
 gene.sets1 <- getGeneSets(library = "C5", gene.sets = c("GOBP_GLIAL_CELL_MIGRATION",'GOBP_NEURON_MIGRATION'
