@@ -207,3 +207,25 @@ cellchat <- computeCommunProbPathway(cellchat)
 cellchat <- aggregateNet(cellchat)
 cellchat <- netAnalysis_computeCentraliy(cellchat, slot.name = "netP")
 cellchat_levi.late <- cellchat
+
+netAnalysis_contribution(cellchat_levi.early, signaling = 'NT')
+pairLR.NT <- extractEnrichedLR(cellchat_levi.early, signaling = 'NT', geneLR.return = FALSE)
+LR.show <- pairLR.NT[1:3,]
+netVisual_individual(cellchat_levi.early, signaling = 'NT', pairLR.use = LR.show, layout = "chord")
+
+mp_genes <- read.table(file = "clipboard", sep = "\t", header=TRUE)
+mp_genes <- mp_genes$MP
+st_genes <- read.table(file = "clipboard", sep = "\t", header=TRUE)
+st_genes <- st_genes$ST
+DefaultAssay(levi.subset.RGC) <- 'RNA'
+gene.sets <- list(MP = mp_genes, ST = st_genes)
+
+ESr <- enrichIt(obj = levi.subset.RGC,
+               gene.sets = gene.sets,
+               groups = 1000, cores = 8)
+levi.subset.RGC <- AddMetaData(levi.subset.RGC, ESr)
+ES2r <- data.frame(levi.subset.RGC[[]], Idents(levi.subset.RGC))
+colnames(ES2r)[ncol(ES2r)] <- "cluster"
+ES2r$orig.ident <- factor(ES2r$orig.ident , levels = c('late','early'))
+ridgeEnrichment(ES2r, gene.set = "MP", group = 'orig.ident', add.rug = TRUE)
+ridgeEnrichment(ES2r, gene.set = "ST", group = 'orig.ident', add.rug = TRUE)
