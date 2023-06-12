@@ -229,3 +229,60 @@ colnames(ES2r)[ncol(ES2r)] <- "cluster"
 ES2r$orig.ident <- factor(ES2r$orig.ident , levels = c('late','early'))
 ridgeEnrichment(ES2r, gene.set = "MP", group = 'orig.ident', add.rug = TRUE)
 ridgeEnrichment(ES2r, gene.set = "ST", group = 'orig.ident', add.rug = TRUE)
+
+
+levi.combined.markers <- FindAllMarkers(levi.combined, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+levi.combined.markers %>%
+group_by(cluster) %>%
+slice_max(n = 2, order_by = avg_log2FC)
+levi.combined.markers %>%
+group_by(cluster) %>%
+top_n(n = 10, wt = avg_log2FC) -> top10
+
+DoHeatmap(levi.combined, features = top10$gene) + NoLegend() + scale_fill_gradientn(colors = c("blue", "white", "red"))
+
+
+plot <- DotPlot(levi.subset.RGC, features = c('Adgrg1','Adgrl3','Ccr4','Celsr1','Celsr2','Celsr3',
+'Cxcr4','Dcc','Drd1','Drd2','Erbb4','Esr2','Fzd3','Gfra3','Gpr173','Il1r1','Nr2f1','Nr2f2',
+'Nr4a2','Nsmf','Ntrk2','Ptprz1','Robo1','Robo2','Robo3','Unc5c','Unc5d'),  cols = 'RdBu', dot.scale = 10, split.by = 'orig.ident')
+plot + theme(axis.text.x = element_text(angle = 315, family = 'Arial'), axis.text.y = element_text(family = 'Arial'))
+
+FD59  <- LoadH5Seurat('C://Users/Emil/10X/scretina/FD59.h5Seurat')
+FD59$stage <- 'FD59'
+FD82  <- LoadH5Seurat('C://Users/Emil/10X/scretina/FD82.h5Seurat')
+FD82$stage <- 'FD82'
+FD125  <- LoadH5Seurat('C://Users/Emil/10X/scretina/FD125.h5Seurat')
+FD125$stage <- 'FD125'
+adult  <- LoadH5Seurat('C://Users/Emil/10X/scretina/adult.h5Seurat')
+adult$stage <- 'Adult'
+FD59RGC <- subset(FD59, idents = c('RGC'))
+FD82RGC <- subset(FD82, idents = c('RGC'))
+FD125RGC <- subset(FD125, idents = c('RGC'))
+adultRGC <- subset(adult, idents = c('RGC'))
+humanRGC <- merge(FD59RGC, y = c(FD82RGC, FD125RGC, adultRGC))
+humanRGC$stage <- factor(humanRGC$stage, levels = c('Adult','FD125','FD82','FD59'))
+mp_genes <- lapply(mp_genes, toupper) 
+mp_genes <- unlist(mp_genes)
+st_genes <- lapply(st_genes, toupper) 
+st_genes <- unlist(st_genes)
+
+
+gene.sets <- list(MP = mp_genes, ST = st_genes)
+
+ESr2 <- enrichIt(obj = humanRGC,
+                gene.sets = gene.sets,
+                groups = 1000, cores = 8)
+humanRGC <- AddMetaData(humanRGC, ESr2)
+ES2r2 <- data.frame(humanRGC[[]], Idents(humanRGC))
+colnames(ES2r2)[ncol(ES2r2)] <- "cluster"
+
+ridgeEnrichment(ES2r2, gene.set = "MP", group = 'orig.ident', add.rug = TRUE)
+
+ESr3 <- enrichIt(obj = human.combined.RGC,
+                 gene.sets = gene.sets,
+                 groups = 1000, cores = 8)
+human.combined.RGC <- AddMetaData(human.combined.RGC, ESr3)
+ESr3 <- data.frame(human.combined.RGC[[]], Idents(human.combined.RGC))
+colnames(ESr3)[ncol(ESr3)] <- "cluster"
+
+ridgeEnrichment(ESr3, gene.set = "MP", group = 'orig.ident', add.rug = TRUE)
