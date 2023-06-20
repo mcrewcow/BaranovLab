@@ -286,3 +286,28 @@ ESr3 <- data.frame(human.combined.RGC[[]], Idents(human.combined.RGC))
 colnames(ESr3)[ncol(ESr3)] <- "cluster"
 
 ridgeEnrichment(ESr3, gene.set = "MP", group = 'orig.ident', add.rug = TRUE)
+
+
+ht1 <- netAnalysis_signalingRole_heatmap(cellchat_levi.late, pattern = "outgoing", height = 2, signaling = c('SEMA5','MK'))
+ht2 <- netAnalysis_signalingRole_heatmap(cellchat_levi.late, pattern = "incoming", height = 2, signaling = c('SEMA5','MK'))
+
+ht1 + ht2
+
+ht1 <- netAnalysis_signalingRole_heatmap(cellchat_levi.early, pattern = "outgoing", height = 6, signaling = c('NEGR','LAMININ','NGL','NT','SEMA3','ESAM'))
+ht2 <- netAnalysis_signalingRole_heatmap(cellchat_levi.early, pattern = "incoming", height = 6, signaling = c('NEGR','LAMININ','NGL','NT','SEMA3','ESAM'))
+
+ht1 + ht2
+
+ht1 <- netAnalysis_signalingRole_heatmap(cellchat_levi.early, pattern = "outgoing", height = 3, width = 3, signaling = c('NEGR','LAMININ','NGL','NT','SEMA3','ESAM'))
+ht2 <- netAnalysis_signalingRole_heatmap(cellchat_levi.early, pattern = "incoming", height = 3, width = 3, signaling = c('NEGR','LAMININ','NGL','NT','SEMA3','ESAM'))
+
+ht1 + ht2
+
+ht1 <- netAnalysis_signalingRole_heatmap(cellchat_levi.late, pattern = "outgoing", height = 1, width = 3, signaling = c('SEMA5','MK'))
+ht2 <- netAnalysis_signalingRole_heatmap(cellchat_levi.late, pattern = "incoming", height = 1, width = 3, signaling = c('SEMA5','MK'))
+
+ht1 + ht2
+
+strwidth <- function(x) {0.5}
+netVisual_aggregate(cellchat_levi.early, signaling = c('LAMININ'), layout = "chord", show.legend = FALSE)
+netVisual_aggregate(cellchat_levi.early, signaling = c('NT'), layout = "chord", show.legend = FALSE)
