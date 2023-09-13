@@ -462,3 +462,351 @@ FD125@active.ident <- FD125$seurat_clusters
 FD125 <- RenameIdents(FD125, '0' = 'Rods', '1' = 'Progenitors', '2' = 'AC/HC', '3' = 'Rods', '4'='Progenitors',
                       '5'='Glia','6'='RGC','7'='Cones','8'='Bipolar','9'='Horizontal','10'='Muller glia','11'='Amacrine',
                       '12'='Cones','13'='Glia','14'='Glia')
+
+
+#rerun Mandeep from the filtered_feature_bc_matrix for later comparison
+
+data <- Read10X(data.dir = data_dir)
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+s.genes <- cc.genes.updated.2019$s.genes
+g2m.genes <- cc.genes.updated.2019$g2m.genes
+ProcessSeu <- function(Seurat){
+  Seurat <- NormalizeData(Seurat)
+  Seurat <- FindVariableFeatures(Seurat, selection.method = "vst", nfeatures = 2000)
+  Seurat <- ScaleData(Seurat)
+  Seurat <- RunPCA(Seurat)
+  Seurat <- FindNeighbors(Seurat, dims = 1:20)
+  Seurat <- FindClusters(Seurat, resolution = 0.5)
+  Seurat <- RunUMAP(Seurat, dims = 1:20)
+  Seurat <- RunTSNE(Seurat,  dims.use = 1:20 )
+  DimPlot(object = Seurat, reduction = "umap")
+  return (Seurat)
+}
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 3)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 10000 & nFeature_RNA > 100 & nFeature_RNA < 1500 & percent.mt < 15 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+RDoublet <- function(tmp){
+  sweep.res.list <- paramSweep_v3(tmp, PCs = 1:30, sct = FALSE)
+  sweep.stats <- summarizeSweep(sweep.res.list, GT = FALSE)
+  bcmvn <- find.pK(sweep.stats)
+  pKopt <- as.numeric(as.character(bcmvn$pK[bcmvn$BCmetric == max(bcmvn$BCmetric)]))
+  pKopt <- pKopt[order(pKopt, decreasing = TRUE) ]
+  pKopt <- pKopt[1]
+  homotypic.prop <- modelHomotypic(tmp$seurat_clusters)
+  nExp_poi <- round(0.1*length(colnames(tmp)))  ## Assuming 10% doublet formation rate
+  nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+  tmp <- doubletFinder_v3(tmp, PCs = 1:30, pN = 0.25, pK = pKopt, nExp = nExp_poi, reuse.pANN = FALSE)
+  tmp <- doubletFinder_v3(tmp, PCs = 1:30, pN = 0.25, pK = pKopt, nExp = nExp_poi.adj, reuse.pANN = paste("pANN_0.25",pKopt,nExp_poi, sep="_"))
+  return (tmp)
+}
+library(DoubletFinder)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+cultured_rep1_1<- expr1
+cultured_rep1_1$condition <- 'cultured'
+cultured_rep1_1$group <- 'cultured_rep1_1'
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/cultured_rep1_2/tr_5/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+s.genes <- cc.genes.updated.2019$s.genes
+g2m.genes <- cc.genes.updated.2019$g2m.genes
+ProcessSeu <- function(Seurat){
+  Seurat <- NormalizeData(Seurat)
+  Seurat <- FindVariableFeatures(Seurat, selection.method = "vst", nfeatures = 2000)
+  Seurat <- ScaleData(Seurat)
+  Seurat <- RunPCA(Seurat)
+  Seurat <- FindNeighbors(Seurat, dims = 1:20)
+  Seurat <- FindClusters(Seurat, resolution = 0.5)
+  Seurat <- RunUMAP(Seurat, dims = 1:20)
+  Seurat <- RunTSNE(Seurat,  dims.use = 1:20 )
+  DimPlot(object = Seurat, reduction = "umap")
+  return (Seurat)
+}
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+RDoublet <- function(tmp){
+  sweep.res.list <- paramSweep_v3(tmp, PCs = 1:30, sct = FALSE)
+  sweep.stats <- summarizeSweep(sweep.res.list, GT = FALSE)
+  bcmvn <- find.pK(sweep.stats)
+  pKopt <- as.numeric(as.character(bcmvn$pK[bcmvn$BCmetric == max(bcmvn$BCmetric)]))
+  pKopt <- pKopt[order(pKopt, decreasing = TRUE) ]
+  pKopt <- pKopt[1]
+  homotypic.prop <- modelHomotypic(tmp$seurat_clusters)
+  nExp_poi <- round(0.1*length(colnames(tmp)))  ## Assuming 10% doublet formation rate
+  nExp_poi.adj <- round(nExp_poi*(1-homotypic.prop))
+  tmp <- doubletFinder_v3(tmp, PCs = 1:30, pN = 0.25, pK = pKopt, nExp = nExp_poi, reuse.pANN = FALSE)
+  tmp <- doubletFinder_v3(tmp, PCs = 1:30, pN = 0.25, pK = pKopt, nExp = nExp_poi.adj, reuse.pANN = paste("pANN_0.25",pKopt,nExp_poi, sep="_"))
+  return (tmp)
+}
+library(DoubletFinder)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+cultured_rep1_2<- expr1
+cultured_rep1_2$condition <- 'cultured'
+cultured_rep1_2$group <- 'cultured_rep1_2'
+SaveH5Seurat(cultured_rep1_2, 'G://Mandeep_dataset/NEW/cultured_rep1_2.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/cultured_rep1_3/tr_17/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+cultured_rep1_3<- expr1
+cultured_rep1_3$condition <- 'cultured'
+cultured_rep1_3$group <- 'cultured_rep1_3'
+SaveH5Seurat(cultured_rep1_3, 'G://Mandeep_dataset/NEW/cultured_rep1_3.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/cultured_rep1_4/tr_20/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+cultured_rep1_4<- expr1
+cultured_rep1_4$condition <- 'cultured'
+cultured_rep1_4$group <- 'cultured_rep1_4'
+SaveH5Seurat(cultured_rep1_4, 'G://Mandeep_dataset/NEW/cultured_rep1_4.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/cultured_rep2_1/tr_3/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+cultured_rep2_1<- expr1
+cultured_rep2_1$condition <- 'cultured'
+cultured_rep2_1$group <- 'cultured_rep2_1'
+SaveH5Seurat(cultured_rep2_1, 'G://Mandeep_dataset/NEW/cultured_rep2_1.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/cultured_rep2_2/tr_17/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+cultured_rep2_2<- expr1
+cultured_rep2_2$condition <- 'cultured'
+cultured_rep2_2$group <- 'cultured_rep2_2'
+SaveH5Seurat(cultured_rep2_2, 'G://Mandeep_dataset/NEW/cultured_rep2_2.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/cultured_rep2_3/tr_17/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+cultured_rep2_3<- expr1
+cultured_rep2_3$condition <- 'cultured'
+cultured_rep2_3$group <- 'cultured_rep2_3'
+SaveH5Seurat(cultured_rep2_3, 'G://Mandeep_dataset/NEW/cultured_rep2_3.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/cultured_rep2_4/tr_20/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+cultured_rep2_4<- expr1
+cultured_rep2_4$condition <- 'cultured'
+cultured_rep2_4$group <- 'cultured_rep2_4'
+SaveH5Seurat(cultured_rep2_4, 'G://Mandeep_dataset/NEW/cultured_rep2_4.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/transplant_rep1_1/tr_12/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+transplant_rep1_1<- expr1
+transplant_rep1_1$condition <- 'transplant'
+transplant_rep1_1$group <- 'transplant_rep1_1'
+SaveH5Seurat(transplant_rep1_1, 'G://Mandeep_dataset/NEW/transplant_rep1_1.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/transplant_rep1_2/tr_13/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+transplant_rep1_2<- expr1
+transplant_rep1_2$condition <- 'transplant'
+transplant_rep1_2$group <- 'transplant_rep1_2'
+SaveH5Seurat(transplant_rep1_2, 'G://Mandeep_dataset/NEW/transplant_rep1_2.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/transplant_rep1_3/tr_14/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+transplant_rep1_3<- expr1
+transplant_rep1_3$condition <- 'transplant'
+transplant_rep1_3$group <- 'transplant_rep1_3'
+SaveH5Seurat(transplant_rep1_3, 'G://Mandeep_dataset/NEW/transplant_rep1_3.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/transplant_rep1_4/tr_15/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+transplant_rep1_4<- expr1
+transplant_rep1_4$condition <- 'transplant'
+transplant_rep1_4$group <- 'transplant_rep1_4'
+SaveH5Seurat(transplant_rep1_4, 'G://Mandeep_dataset/NEW/transplant_rep1_4.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/transplant_rep2_1/tr_4/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+transplant_rep2_1<- expr1
+transplant_rep2_1$condition <- 'transplant'
+transplant_rep2_1$group <- 'transplant_rep2_1'
+SaveH5Seurat(transplant_rep2_1, 'G://Mandeep_dataset/NEW/transplant_rep2_1.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/transplant_rep2_2/tr_5/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+transplant_rep2_2<- expr1
+transplant_rep2_2$condition <- 'transplant'
+transplant_rep2_2$group <- 'transplant_rep2_2'
+SaveH5Seurat(transplant_rep2_2, 'G://Mandeep_dataset/NEW/transplant_rep2_2.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/transplant_rep2_3/tr_11/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+transplant_rep2_3<- expr1
+transplant_rep2_3$condition <- 'transplant'
+transplant_rep2_3$group <- 'transplant_rep2_3'
+SaveH5Seurat(transplant_rep2_3, 'G://Mandeep_dataset/NEW/transplant_rep2_3.h5Seurat')
+
+data <- Read10X(data.dir = 'G://Mandeep_dataset/NEW/transplant_rep2_4/tr_12/outs/filtered_feature_bc_matrix')
+expr1 <- CreateSeuratObject(counts = data, project = '1')
+expr1 [["percent.rb"]] <- PercentageFeatureSet(expr1 , pattern = "^RPS|^RPL|^MRPS|^MRPL", assay = 'RNA')
+expr1 <- CellCycleScoring(expr1, s.features = s.genes, g2m.features = g2m.genes, set.ident = FALSE, nbin = 6)
+expr1[["percent.mt"]] <- PercentageFeatureSet(expr1, pattern = "^MT-")
+VlnPlot(expr1, features = c("nFeature_RNA", "nCount_RNA", "percent.mt", 'percent.rb'), ncol = 4)
+expr1 <- subset(expr1, subset = nCount_RNA > 100 & nCount_RNA < 40000 & nFeature_RNA > 100 & nFeature_RNA < 7500 & percent.mt < 25 & percent.rb < 35)
+expr1 <- ScaleData(expr1, verbose = T, vars.to.regress = c('nCount_RNA', 'nFeature_RNA', 'percent.mt', "percent.rb","S.Score","G2M.Score"))
+expr1 <- ProcessSeu(expr1)
+expr1 <- RDoublet(expr1)
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][12] == 'Singlet')])
+expr1 <- subset(expr1, cells = colnames(expr1)[which(expr1[[]][13] == 'Singlet')])
+expr1 <- ProcessSeu(expr1)
+transplant_rep2_4<- expr1
+transplant_rep2_4$condition <- 'transplant'
+transplant_rep2_4$group <- 'transplant_rep2_4'
+SaveH5Seurat(transplant_rep2_4, 'G://Mandeep_dataset/NEW/transplant_rep2_4.h5Seurat')
+
