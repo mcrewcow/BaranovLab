@@ -810,3 +810,13 @@ transplant_rep2_4$condition <- 'transplant'
 transplant_rep2_4$group <- 'transplant_rep2_4'
 SaveH5Seurat(transplant_rep2_4, 'G://Mandeep_dataset/NEW/transplant_rep2_4.h5Seurat')
 
+#integrate the data as regular
+mandeep_new <- RenameIdents(mandeep_new, '0' = 'MG','1'='Rod', '2' = 'MG', '3' = 'MG', '4' = 'Progenitors',
+                            '5'='Immature cone','6'='Rod','7'='Progenitors','8'='PR precursor',
+                            '9'='Cone','10'='Rod','11'='RGC ?', '12' = 'Rod','13'='Progenitors','14'='?',
+                            '15'='PR precursor','16'='Rod','17'='Glia','18'='Progenitors','19'='MG',
+                            '20'='?','21'='MG','22'='RGC ?', '23'='MG')
+mandeep_new$Celltype <- mandeep_new@active.ident
+DimPlot(mandeep_new, group.by = 'Celltype', label = T, repel = T, label.box = T)
+SaveH5Seurat(mandeep_new, 'G://Mandeep_dataset/NEW/data_combined_final.h5Seurat')
+Convert('G://Mandeep_dataset/NEW/data_combined_final.h5Seurat', dest = "h5ad")
