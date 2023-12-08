@@ -820,3 +820,223 @@ mandeep_new$Celltype <- mandeep_new@active.ident
 DimPlot(mandeep_new, group.by = 'Celltype', label = T, repel = T, label.box = T)
 SaveH5Seurat(mandeep_new, 'G://Mandeep_dataset/NEW/data_combined_final.h5Seurat')
 Convert('G://Mandeep_dataset/NEW/data_combined_final.h5Seurat', dest = "h5ad")
+
+
+
+
+integration_list <- list(adult, AMD)
+features <- SelectIntegrationFeatures(object.list = integration_list)
+data.anchors <- FindIntegrationAnchors(object.list = integration_list, anchor.features = features)
+adult_AMD <- IntegrateData(anchorset = data.anchors)
+adult_AMD <- ProcessInt(adult_AMD)
+
+SaveH5Seurat(adult_AMD, 'C://Bioinf/adult_AMD_for_R01.h5Seurat')
+adult_AMD$cell_composition <- paste(adult_AMD$annotation, adult_AMD$stage)
+AMD_new <- subset(adult_AMD, subset = stage == 'AMD')
+adult_new <- subset(adult_AMD, subset = stage == 'Healthy')
+
+adult_AMD <- SetIdent(adult_AMD, value = 'cell_composition')
+adult_AMD <- RenameIdents(adult_AMD, 'Cone AMD' = 'Cones AMD', 'AC/HC AMD' = 'Horizontal AMD')
+adult_AMD$cell_composition <- adult_AMD@active.ident
+
+AMD_new <- SetIdent(AMD_new, value = 'annotation')
+AMD_new <- RenameIdents(AMD_new, 'Cone' = 'Cones', 'AC/HC' = 'Horizontal')
+AMD_new$annotation <- AMD_new@active.ident
+
+library(Seurat.utils)
+parallel.computing.by.future()
+
+
+cellchat <- createCellChat(object = AMD_new , group.by = "annotation", assay = 'RNA')
+CellChatDB <- CellChatDB.human
+CellChatDB.use <- CellChatDB
+cellchat@DB <- CellChatDB.use
+cellchat <- subsetData(cellchat)
+cellchat <- identifyOverExpressedGenes(cellchat)
+cellchat <- identifyOverExpressedInteractions(cellchat)
+cellchat <- projectData(cellchat, PPI.human)
+cellchat <- computeCommunProb(cellchat, type = "truncatedMean", trim = 0.1, raw.use = FALSE, population.size = FALSE)
+cellchat <- filterCommunication(cellchat, min.cells = 20)
+cellchat <- computeCommunProbPathway(cellchat)
+cellchat <- aggregateNet(cellchat)
+cellchat <- netAnalysis_computeCentrality(cellchat, slot.name = "netP")
+cellchat_AMD <- cellchat
+saveRDS(cellchat, file = "C://Bioinf/cellchat_AMD_relabeled.rds")
+
+cellchat <- createCellChat(object = adult_new , group.by = "annotation", assay = 'RNA')
+CellChatDB <- CellChatDB.human
+CellChatDB.use <- CellChatDB
+cellchat@DB <- CellChatDB.use
+cellchat <- subsetData(cellchat)
+cellchat <- identifyOverExpressedGenes(cellchat)
+cellchat <- identifyOverExpressedInteractions(cellchat)
+cellchat <- projectData(cellchat, PPI.human)
+cellchat <- computeCommunProb(cellchat, type = "truncatedMean", trim = 0.1, raw.use = FALSE, population.size = FALSE)
+cellchat <- filterCommunication(cellchat, min.cells = 20)
+cellchat <- computeCommunProbPathway(cellchat)
+cellchat <- aggregateNet(cellchat)
+cellchat <- netAnalysis_computeCentrality(cellchat, slot.name = "netP")
+cellchat_adult <- cellchat
+saveRDS(cellchat, file = "C://Bioinf/cellchat_adult.rds")
+
+ht1 <- netAnalysis_signalingRole_heatmap(cellchat_AMD, pattern = "outgoing", height = 6, width = 4)
+ht2 <- netAnalysis_signalingRole_heatmap(cellchat_AMD,pattern = "incoming", height = 6, width = 4)
+ht1 + ht2
+
+cellchat_adult <- updateClusterLabels(cellchat_adult, old.cluster.name =c('Amacrine','Astrocytes',
+'Cone','GABA-Amacrine','Horizontal','Microglia','Müller glia','OFF-cone bipolar',
+'ON-bipolar','RGC','Rod'), new.cluster.name = c('Amacrine','Astrocytes',
+'Cones','GABA-Amacrine','Horizontal','Microglia','Glia','OFF-cone bipolar',
+'ON-bipolar','RGC','Rod'))
+
+
+cellchat_AMD <- liftCellChat(cellchat_AMD, c("Cones", "Horizontal", "RGC", "Amacrine", "Bipolar", "Glia",      
+      "Interneuron", "Microglia",   "RPE",  "Rod", "Endothelia",'Astrocytes','GABA-Amacrine','OFF-cone bipolar',
+      'ON-bipolar'))
+cellchat_adult <- liftCellChat(cellchat_adult, c("Cones", "Horizontal", "RGC", "Amacrine", "Bipolar", "Glia",      
+                                               "Interneuron", "Microglia",   "RPE",  "Rod", "Endothelia",'Astrocytes','GABA-Amacrine','OFF-cone bipolar',
+                                               'ON-bipolar'))
+object.list <- list(Healthy = cellchat_adult, AMD = cellchat_AMD)
+cellchat <- mergeCellChat(object.list, add.names = names(object.list), cell.prefix = TRUE)
+
+gg1 <- rankNet(cellchat, mode = "comparison", comparison = c(1:2), stacked = T, do.stat = TRUE)
+gg2 <- rankNet(cellchat, mode = "comparison", stacked = F, do.stat = TRUE)
+gg1 + gg2
+
+library(ComplexHeatmap)
+i = 1
+# combining all the identified signaling pathways from different datasets 
+pathway.union <- union(object.list[[i]]@netP$pathways, object.list[[i+1]]@netP$pathways)
+ht1 = netAnalysis_signalingRole_heatmap(object.list[[i]], pattern = "outgoing", signaling = pathway.union, title = names(object.list)[i], width = 5, height = 45)
+ht2 = netAnalysis_signalingRole_heatmap(object.list[[i+1]], pattern = "outgoing", signaling = pathway.union, title = names(object.list)[i+1], width = 5, height = 45)
+draw(ht1 + ht2, ht_gap = unit(3, "cm"))
+
+pos.dataset = "Healthy"
+features.name = pos.dataset
+cellchat <- identifyOverExpressedGenes(cellchat,  pos.dataset = pos.dataset, features.name = features.name, only.pos = FALSE, thresh.pc = 0.1, thresh.fc = 0.05, thresh.p = 1) 
+
+net <- netMappingDEG(cellchat, features.name = features.name)
+
+net.up <- subsetCommunication(cellchat, net = net, datasets = "Healthy",ligand.logFC = 0.1, receptor.logFC = NULL)
+net.down <- subsetCommunication(cellchat, net = net, datasets = "AMD",ligand.logFC = -0.05, receptor.logFC = -0.05)
+gc()
+
+gene.up <- extractGeneSubsetFromPair(net.up, cellchat)
+gene.down <- extractGeneSubsetFromPair(net.down, cellchat)
+
+computeEnrichmentScore(net.down, species = 'human')
+computeEnrichmentScore(net.up, species = 'human')
+
+adult_AMD <- SetIdent(adult_AMD, value = 'cell_composition')
+adult_AMD_microglia <- subset(adult_AMD, ident = c('Amacrine Healthy',
+                'Astrocytes Healthy', 'Cone Healthy', 'GABA-Amacrine Healthy', 'Horizontal Healthy',
+            'Microglia AMD', 'Müller glia Healthy', 'OFF-cone bipolar Healthy', 'ON-bipolar Healthy',
+            'RGC Healthy', 'Rod Healthy'))
+
+cellchat <- createCellChat(object = adult_AMD_microglia , group.by = "cell_composition", assay = 'RNA')
+CellChatDB <- CellChatDB.human
+CellChatDB.use <- CellChatDB
+cellchat@DB <- CellChatDB.use
+cellchat <- subsetData(cellchat)
+cellchat <- identifyOverExpressedGenes(cellchat)
+cellchat <- identifyOverExpressedInteractions(cellchat)
+cellchat <- projectData(cellchat, PPI.human)
+cellchat <- computeCommunProb(cellchat, type = "truncatedMean", trim = 0.1, raw.use = FALSE, population.size = FALSE)
+cellchat <- filterCommunication(cellchat, min.cells = 20)
+cellchat <- computeCommunProbPathway(cellchat)
+cellchat <- aggregateNet(cellchat)
+cellchat <- netAnalysis_computeCentrality(cellchat, slot.name = "netP")
+cellchat_adult_AMD_microglia <- cellchat
+saveRDS(cellchat, file = "C://Bioinf/cellchat_adult_AMD_microglia.rds")
+
+
+adult_AMD_RGC <- subset(adult_AMD, ident = c('Amacrine AMD',
+                                                   'Interneuron AMD', 'Cones AMD', 'Horizontal AMD',
+                                                   'Microglia AMD', 'Glia AMD', 'Bipolar AMD',
+                                                   'RGC Healthy', 'Rod AMD', 'RPE AMD', 'Endothelia AMD'))
+
+adult_AMD_RGC@active.ident <- droplevels(adult_AMD_RGC@active.ident, exclude = setdiff(levels(adult_AMD_RGC@active.ident), unique(adult_AMD_RGC@active.ident)))
+adult_AMD_RGC$cell_composition <- droplevels(adult_AMD_RGC$cell_composition, exclude = setdiff(levels(adult_AMD_RGC$cell_composition), unique(adult_AMD_RGC$cell_composition)))
+cellchat <- createCellChat(object = adult_AMD_RGC , group.by = "cell_composition", assay = 'RNA')
+CellChatDB <- CellChatDB.human
+CellChatDB.use <- CellChatDB
+cellchat@DB <- CellChatDB.use
+cellchat <- subsetData(cellchat)
+cellchat <- identifyOverExpressedGenes(cellchat)
+cellchat <- identifyOverExpressedInteractions(cellchat)
+cellchat <- projectData(cellchat, PPI.human)
+cellchat <- computeCommunProb(cellchat, type = "truncatedMean", trim = 0.1, raw.use = FALSE, population.size = FALSE)
+cellchat <- filterCommunication(cellchat, min.cells = 20)
+cellchat <- computeCommunProbPathway(cellchat)
+cellchat <- aggregateNet(cellchat)
+cellchat <- netAnalysis_computeCentrality(cellchat, slot.name = "netP")
+cellchat_adult_AMD_RGC <- cellchat
+saveRDS(cellchat, file = "C://Bioinf/cellchat_adult_AMD_RGC.rds")
+
+ht1 <- netAnalysis_signalingRole_heatmap(cellchat_AMD, pattern = "all", height =45, width = 4)
+ht2 <- netAnalysis_signalingRole_heatmap(cellchat_AMD,pattern = "all", height = 45, width = 4)
+ht1 + ht2
+
+cellchat_adult_AMD_microglia <- updateClusterLabels(cellchat_adult_AMD_microglia, old.cluster.name =c('Amacrine Healthy',
+                                                                                                      'Astrocytes Healthy', 'Cone Healthy', 'GABA-Amacrine Healthy', 'Horizontal Healthy',
+                                                                                                      'Microglia AMD', 'Müller glia Healthy', 'OFF-cone bipolar Healthy', 'ON-bipolar Healthy',
+                                                                                                      'RGC Healthy', 'Rod Healthy'), new.cluster.name = c('Amacrine',
+                                                                                                                                                          'Astrocytes', 'Cones', 'GABA-Amacrine', 'Horizontal', 'Microglia', 'Müller glia', 'OFF-cone bipolar', 'ON-bipolar',
+                                                                                                                                                          'RGC', 'Rod'))
+cellchat_adult_AMD_microglia <- updateClusterLabels(cellchat_adult_AMD_microglia, old.cluster.name =c('Amacrine',
+                                                                                                      'Astrocytes', 'Cone', 'GABA-Amacrine', 'Horizontal', 'Microglia', 'Müller glia', 'OFF-cone bipolar', 'ON-bipolar',
+                                                                                                      'RGC', 'Rod'), new.cluster.name = c('Amacrine',
+                                                                                                                                                          'Astrocytes', 'Cones', 'GABA-Amacrine', 'Horizontal', 'Microglia', 'Müller glia', 'OFF-cone bipolar', 'ON-bipolar',
+                                                                                                                                                          'RGC', 'Rod'),
+                                                    new.cluster.metaname = "new.labels1")
+
+cellchat_adult_AMD_microglia <- liftCellChat(cellchat_adult_AMD_microglia, c("Amacrine", "Astrocytes", "Cones", "GABA-Amacrine", "Horizontal", "Microglia",      
+                                                                                                     "Müller glia", "OFF-cone bipolar",   "ON-bipolar",  "RGC", "Rod",'Bipolar','Glia','Interneuron',
+                                                                                                     'RPE'))
+                                                                                                                
+
+object.list <- list(Healthy = cellchat_adult, AMD = cellchat_AMD, Healthy_AMD_microglia = cellchat_adult_AMD_microglia)
+cellchat <- mergeCellChat(object.list, add.names = names(object.list), cell.prefix = TRUE)
+
+gg1 <- rankNet(cellchat, mode = "comparison", comparison = c(1:3), stacked = T, do.stat = TRUE)
+gg2 <- rankNet(cellchat, mode = "comparison", stacked = F, do.stat = TRUE)
+gg1 + gg2                                         
+
+ht1 <- netAnalysis_signalingRole_heatmap(cellchat_AMD, pattern = "all", signaling = c("ApoE", "TAFA", "GALECTIN", "GDNF", "ANNEXIN", "IL16", "SELPG", "ADGRE5", "CD96", "GRN", "SN", "IFN-II", "GH", "VWF", "2-AG", "MMP", "LHB", "SEMA5", "ADGRG", "CRH", "TIGIT", "CD200", "PACAP", "CX3C", "ESAM", "PVR", "ENHO", "IFN-I", "Ach", "MIF", "IL16", "CSF3", "LHB", "NMU"), height =10, width = 4)
+ht2 <- netAnalysis_signalingRole_heatmap(cellchat_AMD,pattern = "all", signaling = c("ApoE", "TAFA", "GALECTIN", "GDNF", "ANNEXIN", "IL16", "SELPG", "ADGRE5", "CD96", "GRN", "SN", "IFN-II", "GH", "VWF", "2-AG", "MMP", "LHB", "SEMA5", "ADGRG", "CRH", "TIGIT", "CD200", "PACAP", "CX3C", "ESAM", "PVR", "ENHO", "IFN-I", "Ach", "MIF", "IL16", "CSF3", "LHB", "NMU"),height = 10, width = 4)
+ht1 + ht2
+
+pathways.show = 'CLDN'
+netVisual_chord_cell(cellchat_adult, signaling = pathways.show)
+netVisual_chord_cell(cellchat_adult_AMD_microglia, signaling = pathways.show)
+netVisual_chord_cell(cellchat_AMD, signaling = pathways.show)
+
+ht1 <- netAnalysis_signalingRole_heatmap(cellchat_AMD, pattern = "all", signaling = c("MHC-II", "ADGRG", "COMPLEMENT", "CXCL", "CD45", "PCDH", "SLITRK", "NT", "PSAP", "IL2", "L1CAM", "THY1", "IGFBP", "Chemerin", "NPVF", "GDNF", "BTLA", "CLDN", "LIGHT", "SEMA4", "CypA", "PDGF", "FLRT", "CD96"), height =7, width = 4)
+ht2 <- netAnalysis_signalingRole_heatmap(cellchat_AMD,pattern = "all", signaling = c("MHC-II", "ADGRG", "COMPLEMENT", "CXCL", "CD45", "PCDH", "SLITRK", "NT", "PSAP", "IL2", "L1CAM", "THY1", "IGFBP", "Chemerin", "NPVF", "GDNF", "BTLA", "CLDN", "LIGHT", "SEMA4", "CypA", "PDGF", "FLRT", "CD96"),height = 7, width = 4)
+ht1 + ht2
+
+cellchat_adult_AMD_RGC <- updateClusterLabels(cellchat_adult_AMD_RGC, old.cluster.name =c('Cones AMD',
+                                                                                                      'Horizontal AMD', 'RGC Healthy', 'Amacrine AMD', 'Bipolar AMD',
+                                                                                                      'Glia AMD', 'Interneuron AMD', 'Microglia AMD', 'RPE AMD',
+                                                                                                      'Rod AMD', 'Endothelia AMD'), new.cluster.name = c('Cones',
+                                                                                                                                                         'Horizontal', 'RGC', 'Amacrine', 'Bipolar',
+                                                                                                                                                         'Glia', 'Interneuron', 'Microglia', 'RPE','Rod', 'Endothelia'))
+
+cellchat_adult_AMD_RGC <- liftCellChat(cellchat_adult_AMD_RGC, c('Cones',
+                                                                 'Horizontal', 'RGC', 'Amacrine', 'Bipolar',
+                                                                 'Glia', 'Interneuron', 'Microglia', 'RPE','Rod', 'Endothelia','Astrocytes',
+                                                                 'GABA-Amacrine','Müller glia','OFF-cone bipolar','ON-bipolar'))
+
+object.list <- list(AMD_RGC = cellchat_adult_AMD_RGC, AMD = cellchat_AMD1)
+cellchat <- mergeCellChat(object.list, add.names = names(object.list), cell.prefix = TRUE)
+
+gg1 <- rankNet(cellchat, mode = "comparison", comparison = c(1:2), stacked = T, do.stat = TRUE)
+gg2 <- rankNet(cellchat, mode = "comparison", stacked = F, do.stat = TRUE)
+gg1 + gg2           
+
+
+cellchat_AMD1 <- liftCellChat(cellchat_AMD, c('Cones',
+                                                                 'Horizontal', 'RGC', 'Amacrine', 'Bipolar',
+                                                                 'Glia', 'Interneuron', 'Microglia', 'RPE','Rod', 'Endothelia','Astrocytes',
+                                                                 'GABA-Amacrine','Müller glia','OFF-cone bipolar','ON-bipolar'))
+
